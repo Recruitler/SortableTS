@@ -1,3 +1,4 @@
+import { ISortableDOMEvents } from '@/dom/event.interfaces';
 import { IAnimationState } from '@animation/animation.interfaces';
 
 // Static members definition
@@ -256,18 +257,17 @@ export interface IDragOverEvent {
 export interface ISortable {
   options: ISortableOptions;
   el: HTMLElement;
-
   destroy(): void;
   option<K extends keyof ISortableOptions>(name: K, value?: ISortableOptions[K]): ISortableOptions[K];
   toArray(): string[];
   sort(order: string[], useAnimation?: boolean): void;
   save(): void;
-
   captureAnimationState(): void;
   addAnimationState(state: IAnimationState): void;
   removeAnimationState(target: HTMLElement): void;
   animateAll(callback?: () => void): void;
   animate(target: HTMLElement, currentRect: DOMRect, toRect: DOMRect, duration: number): void;
+  handleDragOver(evt: ISortableDOMEvents): void;
 }
 
 export interface IMatrix {

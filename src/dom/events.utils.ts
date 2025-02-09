@@ -1,15 +1,14 @@
+import { ISortableDOMEventListener } from './event.interfaces';
+
 /**
- * Base event utilities with modern browser support
+ * Base event utilities
  */
-
-import { ISortableEventListener } from './event.interfaces';
-
-interface CaptureMode {
+interface ICaptureMode {
   capture: boolean;
   passive: boolean;
 }
 
-const captureMode: CaptureMode = {
+const captureMode: ICaptureMode = {
   capture: false,
   passive: false,
 };
@@ -17,10 +16,10 @@ const captureMode: CaptureMode = {
 /**
  * Add/Remove event listener to HTMLElement and Document with modern options
  */
-export const on = (el: HTMLElement | Document, event: string, fn: ISortableEventListener): void => {
+export const on = (el: HTMLElement | Document, event: string, fn: ISortableDOMEventListener): void => {
   el.addEventListener(event, fn as EventListener, captureMode);
 };
-export const off = (el: HTMLElement | Document, event: string, fn: ISortableEventListener): void => {
+export const off = (el: HTMLElement | Document, event: string, fn: ISortableDOMEventListener): void => {
   el.removeEventListener(event, fn as EventListener, captureMode);
 };
 

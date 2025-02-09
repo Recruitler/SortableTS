@@ -1,36 +1,42 @@
-import { IAnimationManager, IAnimationState } from '@animation/animation.interfaces';
-import { isRectEqual } from '@animation/animation.utils';
-import { Sortable } from '@core/sortable';
-import type { ISortable } from '@core/sortable.interfaces';
-import { css, getRect, matrix } from '@dom/dom.utils';
+import { ISortable } from '@core/sortable.interfaces';
+import { SortableState } from '@core/state';
+import { css, getRect } from '@dom/dom.utils';
 import { indexOfObject } from '@utils/array';
+import { CleanupManager } from '../cleanup.manager';
+import { IAnimationManager, IAnimationState } from './animation.interfaces';
+import { animate as animateElement, calculateRealTime, isRectEqual } from './animation.utils';
 
 /**
  * Manages animation states and transitions for sortable elements
- * Handles capturing, tracking, and executing animations during drag and drop operations
  */
 export class AnimationStateManager implements IAnimationManager {
   private animationStates: IAnimationState[] = [];
   private animationCallbackId?: number;
   private sortable: ISortable;
+  private state: SortableState;
+  private cleanupManager: CleanupManager;
+  private instanceId: symbol;
 
   constructor(sortable: ISortable) {
     this.sortable = sortable;
+    this.state = SortableState.getInstance();
+    this.cleanupManager = CleanupManager.getInstance();
+    this.instanceId = Symbol('AnimationStateManager');
   }
 
   /**
    * Captures the current state of all animated children
-   * Creates a snapshot of positions and dimensions for animation tracking
    */
   public captureAnimationState(): void {
     this.animationStates = [];
     if (!this.sortable.options.animation) return;
 
+    const dragState = this.state.getDragOperation();
     const children = Array.from(this.sortable.el.children);
 
     children.forEach((child) => {
       if (!(child instanceof HTMLElement)) return;
-      if (css(child, 'display') === 'none' || child === Sortable.previewEl) return;
+      if (css(child, 'display') === 'none' || child === dragState.ghostEl) return;
 
       const state: IAnimationState = {
         target: child,
@@ -39,18 +45,15 @@ export class AnimationStateManager implements IAnimationManager {
 
       this.animationStates.push(state);
 
+      // Store original rect for reference
       const fromRect = { ...state.rect };
 
-      // Compensate for any ongoing animations
-      if ((child as any).thisAnimationDuration) {
-        const childMatrix = matrix(child, true);
-        if (childMatrix) {
-          fromRect.top -= childMatrix.f;
-          fromRect.left -= childMatrix.e;
-        }
+      // Compensate for ongoing animations
+      if (child.thisAnimationDuration) {
+        this.compensateForAnimation(child, fromRect);
       }
 
-      (child as any).fromRect = fromRect;
+      child.fromRect = fromRect;
     });
   }
 
@@ -65,145 +68,188 @@ export class AnimationStateManager implements IAnimationManager {
    * Removes an animation state for a specific target
    */
   public removeAnimationState(target: HTMLElement): void {
-    this.animationStates.splice(indexOfObject(this.animationStates, { target }), 1);
+    const index = indexOfObject(this.animationStates, { target });
+    if (index !== -1) {
+      this.animationStates.splice(index, 1);
+    }
   }
 
   /**
-   * Animates all tracked states and executes callback when complete
+   * Animates all tracked states
    */
   public animateAll(callback?: () => void): void {
     if (!this.sortable.options.animation) {
-      clearTimeout(this.animationCallbackId);
-      if (callback) callback();
+      this.clearAnimation(callback);
       return;
     }
 
-    let animating = false;
-    let animationTime = 0;
+    const { animating, maxDuration } = this.processAnimationStates();
 
-    this.animationStates.forEach((state) => {
-      const time = this.calculateAnimationTime(state);
-      if (time) {
-        animating = true;
-        animationTime = Math.max(animationTime, time);
-        this.animateStateWithTimer(state, time);
-      }
-    });
-
-    clearTimeout(this.animationCallbackId);
-    if (!animating) {
-      if (callback) callback();
-    } else {
-      this.animationCallbackId = window.setTimeout(() => {
-        if (callback) callback();
-      }, animationTime);
-    }
+    this.scheduleCallback(animating, maxDuration, callback);
     this.animationStates = [];
   }
 
   /**
-   * Calculates the appropriate animation duration for a state
-   * Takes into account previous animations and element positions
-   */
-  private calculateAnimationTime(state: IAnimationState): number {
-    const { target } = state;
-    const targetRect = getRect(target);
-    const fromRect = (target as any).fromRect;
-    const prevFromRect = (target as any).prevFromRect;
-    const prevToRect = (target as any).prevToRect;
-
-    let time = 0;
-
-    if ((target as any).thisAnimationDuration) {
-      if (prevFromRect && prevToRect && isRectEqual(prevFromRect, targetRect) && !isRectEqual(fromRect, targetRect)) {
-        // Calculate time for animations returning to original position
-        time = this.calculateRealTime(state.rect, prevFromRect, prevToRect);
-      }
-    }
-
-    if (!isRectEqual(targetRect, fromRect)) {
-      (target as any).prevFromRect = fromRect;
-      (target as any).prevToRect = targetRect;
-
-      if (!time) {
-        time = this.sortable.options.animation!;
-      }
-
-      this.animate(target, state.rect, targetRect, time);
-    }
-
-    return time;
-  }
-
-  /**
-   * Calculates the real animation time based on movement distance
-   */
-  private calculateRealTime(animatingRect: DOMRect, fromRect: DOMRect, toRect: DOMRect): number {
-    const duration = this.sortable.options.animation || 0;
-    return (Math.sqrt(Math.pow(fromRect.top - animatingRect.top, 2) + Math.pow(fromRect.left - animatingRect.left, 2)) / Math.sqrt(Math.pow(fromRect.top - toRect.top, 2) + Math.pow(fromRect.left - toRect.left, 2))) * duration;
-  }
-
-  /**
-   * Executes the animation for a single element
-   * Handles transform transitions with proper browser repaints
+   * Animate a single element
    */
   public animate(target: HTMLElement, currentRect: DOMRect, toRect: DOMRect, duration: number): void {
-    if (duration) {
-      css(target, 'transition', '');
-      css(target, 'transform', '');
+    animateElement(target, currentRect, toRect, duration, this.sortable.options);
+  }
 
-      const elMatrix = matrix(this.sortable.el);
-      const scaleX = elMatrix?.a || 1;
-      const scaleY = elMatrix?.d || 1;
+  /**
+   * Compensates for any existing CSS transform matrix by adjusting the position coordinates of a DOMRect.
+   * This is useful when you need the true position of an element ignoring its current transform.
+   * @param element - The HTML element to check for transform matrix
+   * @param rect - The original DOMRect to adjust
+   * @returns A new DOMRect with position adjusted for transform matrix, or the original rect if no transform exists
+   */
+  private compensateForAnimation(element: HTMLElement, rect: DOMRect): DOMRect {
+    const computedMatrix: string = getComputedStyle(element).transform;
+    if (computedMatrix && computedMatrix !== 'none') {
+      const matrix: DOMMatrix = new DOMMatrix(computedMatrix);
+      // Create a mutable copy of the rect properties
+      return new DOMRect(
+        rect.x - matrix.m41, // Adjust x/left
+        rect.y - matrix.m42, // Adjust y/top
+        rect.width,
+        rect.height
+      );
+    }
+    return rect;
+  }
 
-      const translateX = (currentRect.left - toRect.left) / scaleX;
-      const translateY = (currentRect.top - toRect.top) / scaleY;
+  /**
+   * Process all animation states and calculate timings
+   */
+  private processAnimationStates(): { animating: boolean; maxDuration: number } {
+    let animating = false;
+    let maxDuration = 0;
 
-      (target as any).animatingX = !!translateX;
-      (target as any).animatingY = !!translateY;
+    this.animationStates.forEach((state) => {
+      const duration = this.calculateAnimationDuration(state);
+      if (duration) {
+        animating = true;
+        maxDuration = Math.max(maxDuration, duration);
+        this.setupAnimationReset(state.target, duration);
+      }
+    });
 
-      css(target, 'transform', `translate3d(${translateX}px,${translateY}px,0)`);
+    return { animating, maxDuration };
+  }
 
-      // Force a repaint before applying the transition
-      this.forceRepaint(target);
+  /**
+   * Calculates the appropriate animation duration for a state transition.
+   * If there's an ongoing animation, it may calculate real-time duration based on previous positions.
+   * Otherwise, it uses the default animation duration from options.
+   * 
+   * @param state - The animation state containing target and position information
+   * @returns The calculated animation duration in milliseconds
+   */
+  private calculateAnimationDuration(state: IAnimationState): number {
+    const { target } = state;
+    const currentRect: DOMRect = getRect(target);
+    let duration: number = 0;
 
-      css(target, 'transition', `transform ${duration}ms${this.sortable.options.easing ? ' ' + this.sortable.options.easing : ''}`);
-      css(target, 'transform', 'translate3d(0,0,0)');
+    // If there's an ongoing animation, check if we need to calculate real-time duration
+    if (target.thisAnimationDuration && 
+        target.prevFromRect && 
+        target.prevToRect && 
+        isRectEqual(target.prevFromRect, currentRect)) {
+      duration = calculateRealTime(
+        state.rect, 
+        target.prevFromRect, 
+        target.prevToRect, 
+        this.sortable.options
+      );
+    }
 
-      clearTimeout((target as any).animated);
-      (target as any).animated = setTimeout(() => {
-        css(target, 'transition', '');
-        css(target, 'transform', '');
-        (target as any).animated = false;
-        (target as any).animatingX = false;
-        (target as any).animatingY = false;
-      }, duration);
+    // If the position has changed from the initial position
+    if (target.fromRect && !isRectEqual(currentRect, target.fromRect)) {
+      // Update tracking for the next animation frame
+      this.updateAnimationTracking(target, currentRect);
+
+      // Use default animation duration if real-time duration wasn't calculated
+      if (!duration) {
+        duration = this.sortable.options.animation || 0;
+      }
+
+      this.animate(target, state.rect, currentRect, duration);
+    }
+
+    return duration;
+  }
+
+  /**
+   * Determine if we should calculate real duration based on previous states
+   */
+  // private shouldCalculateRealDuration(target: HTMLElement, currentRect: DOMRect): boolean {
+  //   return target.prevFromRect && target.prevToRect && isRectEqual(target.prevFromRect, currentRect) && !isRectEqual(target.fromRect!, currentRect);
+  // }
+
+  /**
+   * Update animation tracking state for an element
+   */
+  private updateAnimationTracking(target: HTMLElement, currentRect: DOMRect): void {
+    target.prevFromRect = target.fromRect!;
+    target.prevToRect = currentRect;
+  }
+
+  /**
+   * Setup animation reset timer for an element
+   */
+  private setupAnimationReset(target: HTMLElement, duration: number): void {
+    if (target.animationResetTimer) {
+      clearTimeout(target.animationResetTimer);
+    }
+
+    target.animationResetTimer = window.setTimeout(() => {
+      target.animationTime = 0;
+      target.prevFromRect = null;
+      target.fromRect = null;
+      target.prevToRect = null;
+      target.thisAnimationDuration = null;
+      target.animationResetTimer = undefined;
+    }, duration);
+
+    // Register timer for cleanup
+    this.cleanupManager.registerTimer(this.instanceId, target.animationResetTimer);
+    target.thisAnimationDuration = duration;
+  }
+
+  /**
+   * Schedule the animation callback
+   */
+  private scheduleCallback(animating: boolean, duration: number, callback?: () => void): void {
+    if (this.animationCallbackId) {
+      clearTimeout(this.animationCallbackId);
+    }
+
+    if (!animating) {
+      callback?.();
+      return;
+    }
+
+    this.animationCallbackId = window.setTimeout(() => {
+      callback?.();
+      this.animationCallbackId = undefined;
+    }, duration);
+
+    // Register timer for cleanup
+    if (this.animationCallbackId) {
+      this.cleanupManager.registerTimer(this.instanceId, this.animationCallbackId);
     }
   }
 
   /**
-   * Forces a browser repaint by accessing offsetWidth
-   * This is necessary to ensure smooth transitions between transform states
+   * Clear animation state and execute callback
    */
-  private forceRepaint(target: HTMLElement): void {
-    // Accessing offsetWidth forces a repaint
-    // The value is intentionally not used - this call is purely to trigger a reflow
-    void target.offsetWidth;
+  private clearAnimation(callback?: () => void): void {
+    clearTimeout(this.animationCallbackId);
+    callback?.();
   }
 
-  /**
-   * Sets up animation reset timers for a state
-   */
-  private animateStateWithTimer(state: IAnimationState, time: number): void {
-    const { target } = state;
-    clearTimeout((target as any).animationResetTimer);
-    (target as any).animationResetTimer = setTimeout(() => {
-      (target as any).animationTime = 0;
-      (target as any).prevFromRect = null;
-      (target as any).fromRect = null;
-      (target as any).prevToRect = null;
-      (target as any).thisAnimationDuration = null;
-    }, time);
-    (target as any).thisAnimationDuration = time;
+  public destroy(): void {
+    // The cleanupManager.cleanup will handle all timer cleanup
+    this.cleanupManager.cleanup(this.instanceId);
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "sortablets",
   "version": "1.0.0",
-  "description": "TypeScript port of Sortable.js",
+  "description": "TypeScript rewrite of Sortable.js",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",

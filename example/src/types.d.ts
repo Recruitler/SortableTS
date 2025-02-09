@@ -11,7 +11,7 @@ interface SortableOptions {
   filter?: string;
   preventOnFilter?: boolean;
   draggable?: string;
-  ghostClass?: string;
+  previewClass?: string;
   chosenClass?: string;
   dragClass?: string;
   swapThreshold?: number;
