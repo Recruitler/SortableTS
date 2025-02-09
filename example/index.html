@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="./styles.css" />
+    <title>SortableTS</title>
+  </head>
+  <body>
+    <div class="container">
+      <div class="logo">
+        <div class="image"></div>
+        <h3>SortableTS</h3>
+      </div>
+      <p class="desc">JavaScript library for reorderable drag-and-drop lists</p>
+
+      <section id="features_examples_plugins">
+        <div>
+          <h3>Features</h3>
+          <a href="">Simple list</a>
+          <a href="">Shared lists</a>
+          <a href="">Cloning</a>
+          <a href="">Disabling sorting</a>
+          <a href="">Handles</a>
+          <a href="">Filter</a>
+          <a href="">Thresholds</a>
+          <a href=""></a>
+        </div>
+        <div>
+          <h3>Examples</h3>
+          <a href="">Grid</a>
+          <a href="">Nested sortables</a>
+        </div>
+        <div>
+          <h3>Plugins</h3>
+          <a href="">MultiDrag</a>
+          <a href="">Swap</a>
+          <a href="">Comparisons</a>
+          <a href="">Framework Support</a>
+        </div>
+      </section>
+
+      <section id="features">
+        <h3>Features</h3>
+        <div
+          class="feature"
+          id="shared">
+          <h3>Simple list example</h3>
+
+          <ul>
+            <li>Item 1</li>
+            <li>Item 2</li>
+            <li>Item 3</li>
+            <li>Item 4</li>
+            <li>Item 5</li>
+            <li>Item 6</li>
+          </ul>
+
+          <div class="code">
+            <div>
+              <p class="instance"><span class="new">new</span> <span class="class">Sortable</span><span class="symbol">&#40;</span>example1<span class="symbol">, &#123;</span></p>
+              <p class="style">animation : <span class="style_num">150</span><span class="symbol">,</span></p>
+              <p class="style">ghostClass: <span class="style_str">'blue-background-class'</span></p>
+              <p class="">
+                <span class="symbol">&#125;&#41;&#59;</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="feature"
+          id="shared">
+          <h3>Shared lists</h3>
+
+          <div class="double">
+            <ul class="exampleLeft">
+              <li>Item 1</li>
+              <li>Item 2</li>
+              <li>Item 3</li>
+              <li>Item 4</li>
+              <li>Item 5</li>
+              <li>Item 6</li>
+            </ul>
+            <ul class="exampleRight">
+              <li>Item 1</li>
+              <li>Item 2</li>
+              <li>Item 3</li>
+              <li>Item 4</li>
+              <li>Item 5</li>
+              <li>Item 6</li>
+            </ul>
+          </div>
+
+          <div class="code">
+            <div>
+              <p class="instance"><span class="new">new</span> <span class="class">Sortable</span><span class="symbol">&#40;</span>example2Left<span class="symbol">, &#123;</span></p>
+              <p class="style"><span class="group">group</span> : <span class="style_str">'shared'</span><span class="symbol">,</span></p>
+              <p class="style">animation: <span class="style_num">150</span></p>
+              <p class="">
+                <span class="symbol">&#125;&#41;&#59;</span>
+              </p>
+            </div>
+            <div>
+              <p class="instance"><span class="new">new</span> <span class="class">Sortable</span><span class="symbol">&#40;</span>example2Right<span class="symbol">, &#123;</span></p>
+              <p class="style"><span class="group">group</span> : <span class="style_str">'shared'</span><span class="symbol">,</span> <span class="comment">// set both lists to same group</span></p>
+              <p class="style">animation: <span class="style_num">150</span></p>
+              <p class="">
+                <span class="symbol">&#125;&#41;&#59;</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="feature"
+          id="cloning">
+          <h3>Cloning</h3>
+          <p class="feature_desc">Try dragging from one list to another. The item you drag will be cloned and the clone will stay in the original list.</p>
+
+          <div class="double">
+            <ul class="exampleLeft">
+              <li>Item 1</li>
+              <li>Item 2</li>
+              <li>Item 3</li>
+              <li>Item 4</li>
+              <li>Item 5</li>
+              <li>Item 6</li>
+            </ul>
+            <ul class="exampleRight">
+              <li>Item 1</li>
+              <li>Item 2</li>
+              <li>Item 3</li>
+              <li>Item 4</li>
+              <li>Item 5</li>
+              <li>Item 6</li>
+            </ul>
+          </div>
+
+          <div class="code">
+            <div>
+              <p class="instance"><span class="new">new</span> <span class="class">Sortable</span><span class="symbol">&#40;</span>example3Left<span class="symbol">, &#123;</span></p>
+              <div class="style">
+                <span class="group">group</span>:<span class="symbol"> &#123;</span>
+                <p class="style">name: <span class="style_str">'shared'</span><span class="symbol">,</span></p>
+                <p class="style">pull: <span class="style_str">'clone'</span> <span class="comment">// To clone: set pull to 'clone'</span></p>
+                <p class="">
+                  <span class="symbol">&#125;,</span>
+                </p>
+              </div>
+              <p class="style">animation: <span class="style_num">150</span></p>
+              <p class="">
+                <span class="symbol">&#125;&#41;&#59;</span>
+              </p>
+            </div>
+            <div>
+              <p class="instance"><span class="new">new</span> <span class="class">Sortable</span><span class="symbol">&#40;</span>example3Right<span class="symbol">, &#123;</span></p>
+              <div class="style">
+                <span class="group">group</span>:<span class="symbol"> &#123;</span>
+                <p class="style">name: <span class="style_str">'shared'</span><span class="symbol">,</span></p>
+                <p class="style">pull: <span class="style_str">'clone'</span> <span class="comment">// To clone: set pull to 'clone'</span></p>
+                <p class="">
+                  <span class="symbol">&#125;,</span>
+                </p>
+              </div>
+              <p class="style">animation: <span class="style_num">150</span></p>
+              <p class="">
+                <span class="symbol">&#125;&#41;&#59;</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="feature"
+          id="disable_scrolling">
+          <h3>Disabling Sorting</h3>
+          <p class="feature_desc">Try sorting the list on the left. It is not possible because it has it's sort option set to false. However, you can still drag from the list on the left to the list on the right.</p>
+
+          <div class="double">
+            <ul class="exampleLeft">
+              <li>Item 1</li>
+              <li>Item 2</li>
+              <li>Item 3</li>
+              <li>Item 4</li>
+              <li>Item 5</li>
+              <li>Item 6</li>
+            </ul>
+            <ul class="exampleRight">
+              <li>Item 1</li>
+              <li>Item 2</li>
+              <li>Item 3</li>
+              <li>Item 4</li>
+              <li>Item 5</li>
+              <li>Item 6</li>
+            </ul>
+          </div>
+
+          <div class="code">
+            <div>
+              <p class="instance"><span class="new">new</span> <span class="class">Sortable</span><span class="symbol">&#40;</span>example4Left<span class="symbol">, &#123;</span></p>
+              <div class="style">
+                <span class="group">group</span>:<span class="symbol"> &#123;</span>
+                <p class="style">name: <span class="style_str">'shared'</span><span class="symbol">,</span></p>
+                <p class="style">pull: <span class="style_str">'clone'</span></p>
+                <p class="style">put: <span class="style_bool">false</span> <span class="comment">// Do not allow items to be put into this list</span></p>
+                <p class="">
+                  <span class="symbol">&#125;,</span>
+                </p>
+              </div>
+              <p class="style">animation: <span class="style_num">150</span><span class="symbol">,</span></p>
+              <p class="style">sort: <span class="style_bool">false</span></p>
+              <p class="">
+                <span class="symbol">&#125;&#41;&#59;</span>
+              </p>
+            </div>
+            <div>
+              <p class="instance"><span class="new">new</span> <span class="class">Sortable</span><span class="symbol">&#40;</span>example4Right<span class="symbol">, &#123;</span></p>
+              <p class="style"><span class="group">group</span> : <span class="style_str">'shared'</span><span class="symbol">,</span></p>
+              <p class="style">animation: <span class="style_num">150</span></p>
+              <p class="">
+                <span class="symbol">&#125;&#41;&#59;</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="feature"
+          id="handle">
+          <h3>Handle</h3>
+
+          <ul>
+            <li><button class=""></button>Item 1</li>
+            <li><button class=""></button>Item 2</li>
+            <li><button class=""></button>Item 3</li>
+            <li><button class=""></button>Item 4</li>
+            <li><button class=""></button>Item 5</li>
+            <li><button class=""></button>Item 6</li>
+          </ul>
+
+          <div class="code">
+            <div>
+              <p class="instance"><span class="new">new</span> <span class="class">Sortable</span><span class="symbol">&#40;</span>example5<span class="symbol">, &#123;</span></p>
+              <p class="style">handle : <span class="style_num">'.handle'</span><span class="symbol">,</span> <span class="comment">// handle's class</span></p>
+              <p class="style">ghostClass: <span class="style_str">'blue-background-class'</span></p>
+              <p class="">
+                <span class="symbol">&#125;&#41;&#59;</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>
