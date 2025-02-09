@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="en">
+<html
+  lang="en"
+  class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta
@@ -14,7 +16,7 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <script src="/dist/sortablets.js"></script>
   </head>
-  <body class="bg-gray-50 min-h-screen">
+  <body class="dark:bg-gray-600 bg-gray-50 min-h-screen">
     <a
       href="https://github.com/SortableJS/Sortable"
       class="fixed top-0 right-0 z-50">
@@ -27,14 +29,14 @@
     <div class="container max-w-[960px] mx-auto px-4 py-8">
       <!-- Header -->
       <div class="text-center mb-12">
-        <h1 class="text-4xl font-bold text-gray-900 mb-4">SortableTS</h1>
-        <p class="text-xl text-gray-600 mb-8">TypeScript library for reorderable drag-and-drop lists</p>
+        <h1 class="dark:text-white text-4xl font-bold text-gray-900 mb-4">SortableTS</h1>
+        <p class="text-xl dark:text-white/80 text-gray-600 mb-8">TypeScript library for reorderable drag-and-drop lists</p>
 
         <!-- Navigation -->
-        <nav class="bg-white rounded-[5px] shadow-sm p-6 max-w-2xl mx-auto">
+        <nav class="dark:bg-gray-900 bg-white rounded-[5px] shadow-sm p-6 max-w-2xl mx-auto">
           <div class="grid md:grid-cols-2 gap-8">
             <div>
-              <h3 class="font-semibold text-gray-900 mb-3">Features</h3>
+              <h3 class="font-semibold dark:text-white text-gray-900 mb-3">Features</h3>
               <ul class="space-y-2">
                 <li>
                   <a
@@ -81,7 +83,7 @@
               </ul>
             </div>
             <div>
-              <h3 class="font-semibold text-gray-900 mb-3">Examples</h3>
+              <h3 class="font-semibold dark:text-white text-gray-900 mb-3">Examples</h3>
               <ul class="space-y-2">
                 <li>
                   <a
@@ -122,18 +124,18 @@
         <section
           id="simple-list"
           class="mb-12">
-          <div class="bg-white rounded-[8px] shadow-sm p-6">
-            <h2 class="text-2xl font-semibold text-gray-900 mb-4">Simple List</h2>
+          <div class="dark:bg-gray-900 bg-white rounded-[8px] shadow-sm p-6">
+            <h2 class="text-2xl dark:text-white font-semibold text-gray-900 mb-4">Simple List</h2>
             <div
               id="example1"
               class="rounded-[5px] overflow-hidden">
-              <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 1</div>
-              <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 2</div>
-              <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 3</div>
-              <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 4</div>
-              <div class="px-4 py-3 bg-gray-50 border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 5</div>
+              <div class="px-4 py-3 dark:bg-gray-400 bg-gray-50 border-b-[1px] border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 1</div>
+              <div class="px-4 py-3 dark:bg-gray-400 bg-gray-50 border-b-[1px] border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 2</div>
+              <div class="px-4 py-3 dark:bg-gray-400 bg-gray-50 border-b-[1px] border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 3</div>
+              <div class="px-4 py-3 dark:bg-gray-400 bg-gray-50 border-b-[1px] border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 4</div>
+              <div class="px-4 py-3 dark:bg-gray-400 bg-gray-50 border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 5</div>
             </div>
-            <div class="mt-4 py-4 px-8 border-l-[1px]">
+            <div class="mt-4 py-4 dark:text-white px-8 border-l-[1px]">
               <code class="">
                 <p class=""><span class="text-style_blue">new</span> <span class="text-style_class">Sortable</span><span class="text-slate-300">(</span>example1, <span class="text-slate-300">{</span></p>
                 <p class="ml-6">animation: <span class="text-style_num">150</span>,</p>
@@ -372,6 +374,66 @@
             </div>
           </div>
         </section>
+
+        <!-- Threshold -->
+        <section
+          id="threshold"
+          class="">
+          <div class="bg-white rounded-[8px] shadow-sm p-6">
+            <h2 class="text-2xl font-semibold text-gray-900 mb-3">Thresholds</h2>
+            <p class="mb-8 opacity-80">Try modifying the inputs below to affect the swap thresholds. You can see the swap zones of the squares colored in dark blue, while the "dead zones" (that do not cause a swap) are colored in light blue.</p>
+            <div
+              id="example5"
+              class="rounded-[5px] bg-gray-100 p-8 overflow-hidden">
+              <div class="flex gap-8">
+                <div class="px-4 py-3 h-[250px] justify-center text-4xl text-white w-[250px] bg-blue-500 border-b-[1px] border-blue-200 flex items-center">1</div>
+                <div class="px-4 py-3 h-[250px] justify-center text-4xl text-white w-[250px] bg-blue-500 border-b-[1px] border-gray-200 flex items-center">2</div>
+              </div>
+              <div class="mt-6">
+                <div class="flex mb-3 items-center gap-2 justify-start">
+                  <h3 class="w-[20%] text-sm">Swap Threshold</h3>
+                  <div class="h-5 w-[60%]">
+                    <input
+                      min="0"
+                      max="1"
+                      value="1"
+                      step="0.01"
+                      type="range"
+                      class="form-control-range w-full"
+                      id="example7SwapThresholdInput" />
+                  </div>
+                </div>
+                <div class="flex mb-3 items-center gap-2 justify-start">
+                  <h3 class="w-[20%] text-sm">Invert Swap</h3>
+                  <div class="h-5">
+                    <input type="checkbox" />
+                  </div>
+                </div>
+                <div class="flex mb-3 items-center gap-2 justify-start">
+                  <h3 class="w-[20%] text-sm">Direction</h3>
+                  <div class="h-8">
+                    <select
+                      name=""
+                      id=""
+                      class="w-[200px] h-8 focus:outline-0 border-[1px]">
+                      <option value="">Vertical</option>
+                      <option value="">Horizontal</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="mt-4 py-4 px-8 border-l-[1px]">
+              <code class="">
+                <p class=""><span class="text-style_blue">new</span> <span class="text-style_class">Sortable</span><span class="text-slate-300">(</span>example7, <span class="text-slate-300">{</span></p>
+                <p class="ml-6">swapThreshold: <span class="text-style_num">1</span>,</p>
+                <p class="ml-6">invertSwap: <span class="text-style_blue">true</span>,</p>
+                <p class="ml-6">animation: <span class="text-style_num">150</span></p>
+                <p class="text-slate-300">});</p>
+              </code>
+            </div>
+          </div>
+        </section>
       </div>
 
       <!-- Examples -->
@@ -419,8 +481,9 @@
           class="mb-12">
           <div class="bg-white rounded-[5px] shadow-sm p-6">
             <h2 class="text-2xl font-semibold text-gray-900 mb-4">Nested Sortables</h2>
-            <p class="text-gray-600 mb-4">
-              NOTE: When using nested Sortables with animation, it is recommended that the fallbackOnBody option is set to true. It is also always recommended that either the invertSwap option is set to true, or the swapThreshold option is lower than the default value of 1 (eg 0.65).
+            <p class="text-gray-600 text-sm mb-4">
+              NOTE: When using nested Sortables with animation, it is recommended that the <span class="text-style_class">fallbackOnBody</span> option is set to true. It is also always recommended that either the <span class="text-style_class">invertSwap</span> option is set to true, or the
+              <span class="text-style_class">swapThreshold</span> option is lower than the default value of 1 (eg <span class="text-style_class">0.65</span>).
             </p>
             <div
               id="nestedDemo"
@@ -481,8 +544,9 @@
       </div>
     </div>
 
-    <script
+    <!-- <script
       type="module"
-      src="/src/main.ts"></script>
+      src="/src/main.ts"></script> -->
+    <script src="/src/theme.ts"></script>
   </body>
 </html>
