@@ -183,7 +183,7 @@ export class Sortable implements ISortable {
       this.state.updateDragPosition(touch.clientX, touch.clientY);
     }
 
-    this.initializeDragOperation(evt, touch, validTarget);
+    this.initializeDragOperation(touch, validTarget);
   };
 
   private initDrag = () => {
@@ -211,7 +211,7 @@ export class Sortable implements ISortable {
     this.dispatchSortEvent('dragstart');
   };
 
-  private initializeDragOperation(evt: Event, touch: Touch | PointerEvent | null, target: HTMLElement): void {
+  private initializeDragOperation(touch: Touch | PointerEvent | null, target: HTMLElement): void {
     target.style.willChange = 'transform';
     this.bindDragListeners(!!touch);
 

@@ -1,13 +1,22 @@
 import { ISortableDOMEventListener } from '@dom/event.interfaces';
-import { off } from '@dom/events.utils';
 
-interface CleanupTask {
+interface ICaptureMode {
+  capture: boolean;
+  passive: boolean;
+}
+
+const captureMode: ICaptureMode = {
+  capture: false,
+  passive: false,
+};
+
+interface ICleanupTask {
   type: 'event' | 'timer' | 'animation' | 'custom';
   cleanup: () => void;
 }
 
 export class CleanupManager {
-  private tasks: Map<symbol, Set<CleanupTask>> = new Map();
+  private tasks: Map<symbol, Set<ICleanupTask>> = new Map();
   private static instance: CleanupManager;
 
   private constructor() {}
@@ -19,10 +28,15 @@ export class CleanupManager {
     return CleanupManager.instance;
   }
 
+  private removeEventListener(el: HTMLElement | Document, event: string, fn: ISortableDOMEventListener): void {
+    el.removeEventListener(event, fn as EventListener, captureMode);
+  }
+
   public registerEventListener(instanceId: symbol, element: HTMLElement | Document, event: string, handler: ISortableDOMEventListener): void {
+    element.addEventListener(event, handler as EventListener, captureMode);
     this.addTask(instanceId, {
       type: 'event',
-      cleanup: () => off(element, event, handler),
+      cleanup: () => this.removeEventListener(element, event, handler),
     });
   }
 
@@ -47,7 +61,7 @@ export class CleanupManager {
     });
   }
 
-  private addTask(instanceId: symbol, task: CleanupTask): void {
+  private addTask(instanceId: symbol, task: ICleanupTask): void {
     if (!this.tasks.has(instanceId)) {
       this.tasks.set(instanceId, new Set());
     }
@@ -66,7 +80,7 @@ export class CleanupManager {
   }
 
   public cleanupAll(): void {
-    this.tasks.forEach((tasks: Set<CleanupTask>, instanceId: symbol) => {
+    this.tasks.forEach((tasks: Set<ICleanupTask>, instanceId: symbol) => {
       this.cleanup(instanceId);
     });
     this.tasks.clear();

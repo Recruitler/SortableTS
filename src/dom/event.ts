@@ -1,8 +1,17 @@
 import { ISortable, ISortableOptions, IGroupOptions } from '@core/sortable.interfaces';
 import { IEventProps } from '@dom/event.interfaces';
-import { dispatch } from '@dom/events.utils';
 
-export { off, on } from '@dom/events.utils';
+/**
+ * Dispatches a custom event with type-safe detail
+ */
+function dispatch<T extends object>(el: HTMLElement, eventName: string, detail?: T): boolean {
+  const event = new CustomEvent<T>(eventName, {
+    bubbles: true,
+    cancelable: true,
+    detail,
+  });
+  return el.dispatchEvent(event);
+}
 
 type EventDetail = {
   to: HTMLElement;

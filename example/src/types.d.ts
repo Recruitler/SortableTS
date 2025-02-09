@@ -40,10 +40,10 @@ declare class Sortable {
   constructor(element: HTMLElement, options?: SortableOptions);
 }
 
-declare global {
-  interface Window {
-    SortableTS: {
-      Sortable: typeof Sortable;
-    };
-  }
-}
+// declare global {
+//   interface Window {
+//     SortableTS: {
+//       Sortable: typeof Sortable;
+//     };
+//   }
+// }
