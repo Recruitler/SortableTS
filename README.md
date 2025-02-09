@@ -51,7 +51,6 @@ SortableTS/
 │ ├── global.interfaces.ts
 │ └── index.ts
 ├── example/
-├── node_modules/
 ├── .editorconfig
 ├── .eslintignore
 ├── .eslintrc.json
@@ -75,3 +74,7 @@ if (!instance) {
   throw new Error('No Sortable instance found');
 }
 ```
+
+Changed `static ghost` to `preview`
+Renamed `_createGhost` to `_createPreview`
+Removed ghost-related methods to \_hideDraggingEl, \_showDraggingEl, \_appendDraggingEl

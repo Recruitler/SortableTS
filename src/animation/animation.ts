@@ -30,7 +30,7 @@ export class AnimationStateManager implements IAnimationManager {
 
     children.forEach((child) => {
       if (!(child instanceof HTMLElement)) return;
-      if (css(child, 'display') === 'none' || child === Sortable.ghost) return;
+      if (css(child, 'display') === 'none' || child === Sortable.previewEl) return;
 
       const state: IAnimationState = {
         target: child,

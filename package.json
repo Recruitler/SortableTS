@@ -3,21 +3,27 @@
   "version": "1.0.0",
   "description": "TypeScript port of Sortable.js",
   "type": "module",
-  "main": "dist/sortablets.min.js",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "browser": "dist/sortablets.js",
   "types": "dist/types/index.d.ts",
   "scripts": {
     "dev": "vite",
     "build": "vite build && rollup -c",
     "preview": "vite preview",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "example": "npm run build && vite example"
   },
   "devDependencies": {
-    "vite": "^6.1.0",
-    "vite-plugin-dts": "^4.5.0",
+    "@rollup/plugin-typescript": "^12.1.2",
     "@types/node": "^22.13.1",
+    "autoprefixer": "^10.4.17",
+    "postcss": "^8.4.35",
     "rollup": "^4.34.5",
+    "tailwindcss": "^3.4.1",
     "typescript": "^5.7.3",
-    "@rollup/plugin-typescript": "^12.1.2"
+    "vite": "^6.1.0",
+    "vite-plugin-dts": "^4.5.0"
   },
   "dependencies": {
     "@rollup/plugin-terser": "^0.4.4",
