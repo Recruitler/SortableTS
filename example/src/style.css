@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  scroll-behavior: smooth;
+}
+
+/* Dragging states */
+.dragging {
+  @apply opacity-50 cursor-grabbing;
+}
+
+.sortable-ghost {
+  @apply opacity-50;
+}
+
+.sortable-drag {
+  @apply cursor-grabbing;
+}
+
+/* Code blocks */
+pre {
+  @apply overflow-x-auto;
+}
+
+code {
+  @apply font-mono text-sm;
+}
+
+/* Handle styles */
+.handle {
+  @apply cursor-move hover:text-gray-600 transition-colors;
+}
+
+/* Grid item styles */
+.grid-item {
+  @apply aspect-square flex items-center justify-center;
+}

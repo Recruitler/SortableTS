@@ -1,0 +1,8 @@
+{
+  "singleQuote": true,
+  "prefer-const": 0,
+  "noImplicitAny": false,
+  "bracketSameLine": true,
+  "singleAttributePerLine": true,
+  "printWidth": 300
+}
