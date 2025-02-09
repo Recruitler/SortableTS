@@ -3,30 +3,30 @@ import { IAnimationState } from '@animation/animation.interfaces';
 // Static members definition
 export type SortableStatic = {
   active: ISortable | null;
-  dragged: HTMLElement | null;
-  ghost: HTMLElement | null;
-  clone: HTMLElement | null;
+  draggedEl: HTMLElement | null;
+  previewEl: HTMLElement | null;
+  cloneEl: HTMLElement | null;
 };
 
 export interface ISortableGroup {
   name: string | null;
-  checkPull: (to: ISortable, from: ISortable, dragEl: HTMLElement, event: Event) => boolean | 'clone';
-  checkPut: (to: ISortable, from: ISortable, dragEl: HTMLElement, event: Event) => boolean;
+  checkPull: (to: ISortable, from: ISortable, activeEl: HTMLElement, event: Event) => boolean | 'clone';
+  checkPut: (to: ISortable, from: ISortable, activeEl: HTMLElement, event: Event) => boolean;
   revertClone?: boolean;
 }
 
 export type IGroupOptions =
   | {
       name?: string;
-      pull?: boolean | 'clone' | ((to: ISortable, from: ISortable, dragEl: HTMLElement, event: Event) => boolean);
-      put?: boolean | string[] | ((to: ISortable, from: ISortable, dragEl: HTMLElement, event: Event) => boolean);
+      pull?: boolean | 'clone' | ((to: ISortable, from: ISortable, activeEl: HTMLElement, event: Event) => boolean);
+      put?: boolean | string[] | ((to: ISortable, from: ISortable, activeEl: HTMLElement, event: Event) => boolean);
       revertClone?: boolean;
     }
   | string
   | null;
 
 export type SortableDirection = 'vertical' | 'horizontal';
-export type DirectionFunction = (evt: Event, target: HTMLElement, dragEl: HTMLElement | null) => SortableDirection;
+export type DirectionFunction = (evt: Event, target: HTMLElement, activeEl: HTMLElement | null) => SortableDirection;
 
 /**
  * Options for the Sortable instance.
@@ -80,9 +80,9 @@ export interface ISortableOptions {
    */
   direction?: SortableDirection | DirectionFunction;
   /**
-   * Class for the ghost element.
+   * Class name for the dragging element
    */
-  ghostClass?: string;
+  draggingClass?: string;
   /**
    * Class for the chosen element.
    */
@@ -114,7 +114,7 @@ export interface ISortableOptions {
   /**
    * Function to set data for the data transfer.
    */
-  setData?: (dataTransfer: DataTransfer, dragEl: HTMLElement) => void;
+  setData?: (dataTransfer: DataTransfer, activeEl: HTMLElement) => void;
   /**
    * Whether to bubble the drop event or not.
    */

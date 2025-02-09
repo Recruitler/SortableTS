@@ -9,13 +9,12 @@ import { getElementsArray } from '@utils/element.utils';
 
 export class Sortable implements ISortable {
   static active: ISortable | null = null;
-  static dragged: HTMLElement | null = null;
-  static ghost: HTMLElement | null = null;
-  static clone: HTMLElement | null = null;
-
-  private dragEl: HTMLElement | null = null;
+  static draggedEl: HTMLElement | null = null;
+  static previewEl: HTMLElement | null = null;
+  static cloneEl: HTMLElement | null = null;
+  private activeEl: HTMLElement | null = null;
   private parentEl: HTMLElement | null = null;
-  private ghostEl: HTMLElement | null = null;
+  private draggingEl: HTMLElement | null = null;
   private cloneEl: HTMLElement | null = null;
   private rootEl: HTMLElement;
   private nextEl: HTMLElement | null = null;
@@ -77,7 +76,7 @@ export class Sortable implements ISortable {
     invertedSwapThreshold: null,
     removeCloneOnHide: true,
     direction: 'vertical',
-    ghostClass: 'sortable-ghost',
+    draggingClass: 'sortable-dragging',
     chosenClass: 'sortable-chosen',
     dragClass: 'sortable-drag',
     ignore: 'a, img',
@@ -85,8 +84,8 @@ export class Sortable implements ISortable {
     preventOnFilter: true,
     animation: 0,
     easing: null,
-    setData: function (dataTransfer: DataTransfer, dragEl: HTMLElement) {
-      dataTransfer.setData('Text', dragEl.textContent || '');
+    setData: function (dataTransfer: DataTransfer, activeEl: HTMLElement) {
+      dataTransfer.setData('Text', activeEl.textContent || '');
     },
     dropBubble: false,
     dragoverBubble: false,
@@ -148,9 +147,9 @@ export class Sortable implements ISortable {
     removeInstance(this.el);
 
     // Clear other references without nulling el and rootEl
-    this.dragEl = null;
+    this.activeEl = null;
     this.parentEl = null;
-    this.ghostEl = null;
+    this.draggingEl = null;
     this.cloneEl = null;
     this.nextEl = null;
   }
@@ -229,7 +228,7 @@ export class Sortable implements ISortable {
 
     if (target && (target as HTMLElement)?.shadowRoot) {
       let touchPoint: { clientX: number; clientY: number };
-      
+
       if ('touches' in evt && evt.touches[0]) {
         touchPoint = evt.touches[0];
       } else if ('pointerType' in evt && evt.pointerType === 'touch') {
@@ -237,7 +236,7 @@ export class Sortable implements ISortable {
       } else {
         touchPoint = evt as MouseEvent;
       }
-      
+
       const shadowTarget = (target as HTMLElement)?.shadowRoot?.elementFromPoint(touchPoint.clientX, touchPoint.clientY);
       if (shadowTarget) {
         target = shadowTarget;
@@ -265,7 +264,7 @@ export class Sortable implements ISortable {
     if (!target || !this.el) return;
 
     const dragRect = getRect(target);
-    this.dragEl = target;
+    this.activeEl = target;
     this.parentEl = target.parentNode as HTMLElement;
     this.nextEl = target.nextElementSibling as HTMLElement;
 
@@ -323,7 +322,7 @@ export class Sortable implements ISortable {
   }
 
   private _onTouchMove(evt: MouseEvent | TouchEvent | PointerEvent): void {
-    if (!this.dragEl || !evt.cancelable) return;
+    if (!this.activeEl || !evt.cancelable) return;
 
     let touch: { clientX: number; clientY: number };
 
@@ -337,18 +336,18 @@ export class Sortable implements ISortable {
 
     const options = this.options;
 
-    if (this.ghostEl) {
+    if (this.draggingEl) {
       const dx = touch.clientX - this._lastX;
       const dy = touch.clientY - this._lastY;
 
       evt.preventDefault();
       this._emulateDragOver(evt);
 
-      // Update ghost position
-      if (this.ghostEl) {
-        const mtx = this.ghostEl.style.transform ? matrix(this.ghostEl) : { e: 0, f: 0 };
+      // Update preview position
+      if (this.draggingEl) {
+        const mtx = this.draggingEl.style.transform ? matrix(this.draggingEl) : { e: 0, f: 0 };
 
-        this.ghostEl.style.transform = `translate3d(${dx + (mtx?.e || 0)}px,${dy + (mtx?.f || 0)}px,0)`;
+        this.draggingEl.style.transform = `translate3d(${dx + (mtx?.e || 0)}px,${dy + (mtx?.f || 0)}px,0)`;
       }
     } else if (!this.moved) {
       const threshold = options.touchStartThreshold || 1;
@@ -365,7 +364,7 @@ export class Sortable implements ISortable {
   }
 
   private _onDragStart(evt: Event): void {
-    if (!this.dragEl) return;
+    if (!this.activeEl) return;
 
     const options = this.options;
     const dataTransfer = (evt as DragEvent).dataTransfer;
@@ -373,33 +372,33 @@ export class Sortable implements ISortable {
     // Set data
     if (dataTransfer) {
       dataTransfer.effectAllowed = 'move';
-      options.setData?.(dataTransfer, this.dragEl);
+      options.setData?.(dataTransfer, this.activeEl);
     }
 
-    // Create ghost
-    this._createGhost();
+    // Create preview
+    this._createPreview();
 
-    // Add ghost class
-    const ghostClass = this.options.ghostClass || 'sortable-ghost';
+    // Add preview class
+    const draggingClass = this.options.draggingClass || 'sortable-dragging';
     const fallbackClass = this.options.fallbackClass || 'sortable-fallback';
-    if (this.dragEl) {
-      toggleClass(this.dragEl, ghostClass, true);
+    if (this.activeEl) {
+      toggleClass(this.activeEl, draggingClass, true);
     }
 
     Sortable.active = this;
-    Sortable.dragged = this.dragEl;
+    Sortable.draggedEl = this.activeEl;
   }
 
-  private _createGhost(): void {
-    if (!this.dragEl) return;
+  private _createPreview(): void {
+    if (!this.activeEl) return;
 
-    const ghost = this.dragEl.cloneNode(true) as HTMLElement;
-    const ghostClass = this.options.ghostClass || 'sortable-ghost';
+    const previewEl = this.activeEl.cloneNode(true) as HTMLElement;
+    const draggingClass = this.options.draggingClass || 'sortable-dragging';
     const fallbackClass = this.options.fallbackClass || 'sortable-fallback';
-    ghost.classList.remove(ghostClass);
-    ghost.classList.add(fallbackClass);
-    const rect = getRect(this.dragEl);
-    css(ghost, {
+    previewEl.classList.remove(draggingClass);
+    previewEl.classList.add(fallbackClass);
+    const rect = getRect(this.activeEl);
+    css(previewEl, {
       transition: '',
       transform: '',
       boxSizing: 'border-box',
@@ -415,12 +414,12 @@ export class Sortable implements ISortable {
       display: '',
     });
 
-    this.ghostEl = ghost;
-    document.body.appendChild(ghost);
+    this.draggingEl = previewEl;
+    document.body.appendChild(previewEl);
   }
 
   private _emulateDragOver(evt: Event): void {
-    if (!this.dragEl || !this.ghostEl) return;
+    if (!this.activeEl || !this.draggingEl) return;
 
     const touch = (evt as TouchEvent).touches?.[0] || evt;
     const target = document.elementFromPoint(touch.clientX, touch.clientY) as HTMLElement;
@@ -446,13 +445,13 @@ export class Sortable implements ISortable {
   }
 
   private _onDragOver(evt: Event): void {
-    if (!this.dragEl) return;
+    if (!this.activeEl) return;
 
     evt.preventDefault();
     evt.stopPropagation();
 
     const target = (evt as DragEvent).target as HTMLElement;
-    const dragRect = getRect(this.dragEl);
+    const dragRect = getRect(this.activeEl);
     const targetRect = getRect(target);
 
     const direction = this._getDirection(evt, target);
@@ -480,13 +479,13 @@ export class Sortable implements ISortable {
   }
 
   private _animate(target: HTMLElement): void {
-    if (!this.dragEl) return; // Early return if dragEl is null
+    if (!this.activeEl) return; // Early return if activeEl is null
 
-    const oldIndex = Array.from(this.el.children).indexOf(this.dragEl);
+    const oldIndex = Array.from(this.el.children).indexOf(this.activeEl);
     const newIndex = Array.from(this.el.children).indexOf(target);
 
     if (oldIndex !== newIndex) {
-      this.el.insertBefore(this.dragEl, target);
+      this.el.insertBefore(this.activeEl, target);
       this._dispatchSortEvent('sort', { oldIndex, newIndex });
     }
   }
@@ -496,16 +495,16 @@ export class Sortable implements ISortable {
       evt.preventDefault();
     }
 
-    if (this.dragEl && this.ghostEl) {
-      // Remove ghost
-      this.ghostEl.parentNode?.removeChild(this.ghostEl);
+    if (this.activeEl && this.draggingEl) {
+      // Remove preview
+      this.draggingEl.parentNode?.removeChild(this.draggingEl);
 
-      // Reset dragEl styles
-      const ghostClass = this.options.ghostClass || 'sortable-ghost';
+      // Reset activeEl styles
+      const draggingClass = this.options.draggingClass || 'sortable-dragging';
       const fallbackClass = this.options.fallbackClass || 'sortable-fallback';
-      if (this.dragEl) {
-        toggleClass(this.dragEl, ghostClass, false);
-        toggleClass(this.dragEl, fallbackClass, false);
+      if (this.activeEl) {
+        toggleClass(this.activeEl, draggingClass, false);
+        toggleClass(this.activeEl, fallbackClass, false);
       }
 
       // Dispatch drop event
@@ -518,8 +517,8 @@ export class Sortable implements ISortable {
 
   private _nulling(): void {
     // Reset all state
-    this.dragEl = null;
-    this.ghostEl = null;
+    this.activeEl = null;
+    this.draggingEl = null;
     this.parentEl = null;
     this.nextEl = null;
     this.cloneEl = null;
@@ -531,8 +530,8 @@ export class Sortable implements ISortable {
     this.awaitingDragStarted = false;
 
     Sortable.active = null;
-    Sortable.dragged = null;
-    Sortable.ghost = null;
+    Sortable.draggedEl = null;
+    Sortable.previewEl = null;
   }
 
   private _dispatchSortEvent(name: string, detail: any = {}): void {
@@ -571,23 +570,23 @@ export class Sortable implements ISortable {
     // At this point options.group is an object
     const group = options.group as {
       name?: string;
-      pull?: boolean | 'clone' | ((to: ISortable, from: ISortable, dragEl: HTMLElement, event: Event) => boolean);
-      put?: boolean | string[] | ((to: ISortable, from: ISortable, dragEl: HTMLElement, event: Event) => boolean);
+      pull?: boolean | 'clone' | ((to: ISortable, from: ISortable, activeEl: HTMLElement, event: Event) => boolean);
+      put?: boolean | string[] | ((to: ISortable, from: ISortable, activeEl: HTMLElement, event: Event) => boolean);
       revertClone?: boolean;
     };
 
     // Create normalized internal group
     this._normalizedGroup = {
       name: group.name ?? null,
-      checkPull: (to: ISortable, from: ISortable, dragEl: HTMLElement, evt: Event): boolean | 'clone' => {
+      checkPull: (to: ISortable, from: ISortable, activeEl: HTMLElement, evt: Event): boolean | 'clone' => {
         if (!group.pull) return false;
 
         if (typeof group.pull === 'function') {
-          return group.pull(to, from, dragEl, evt);
+          return group.pull(to, from, activeEl, evt);
         }
         return group.pull;
       },
-      checkPut: (to: ISortable, from: ISortable, dragEl: HTMLElement, evt: Event): boolean => {
+      checkPut: (to: ISortable, from: ISortable, activeEl: HTMLElement, evt: Event): boolean => {
         if (!group.put) return false;
 
         if (Array.isArray(group.put)) {
@@ -595,7 +594,7 @@ export class Sortable implements ISortable {
           return group.put.includes(fromGroup?.name ?? '');
         }
         if (typeof group.put === 'function') {
-          return group.put(to, from, dragEl, evt);
+          return group.put(to, from, activeEl, evt);
         }
         return !!group.put;
       },
@@ -603,8 +602,8 @@ export class Sortable implements ISortable {
     };
   }
 
-  private _toFn(value: any, pull: boolean): (to: ISortable, from: ISortable, dragEl: HTMLElement, evt: Event) => boolean | 'clone' {
-    return (to: ISortable, from: ISortable, dragEl: HTMLElement, evt: Event): boolean | 'clone' => {
+  private _toFn(value: any, pull: boolean): (to: ISortable, from: ISortable, activeEl: HTMLElement, evt: Event) => boolean | 'clone' {
+    return (to: ISortable, from: ISortable, activeEl: HTMLElement, evt: Event): boolean | 'clone' => {
       const toGroup = (to as Sortable)._normalizedGroup;
       const fromGroup = (from as Sortable)._normalizedGroup;
       const sameGroup = toGroup?.name && fromGroup?.name && toGroup.name === fromGroup.name;
@@ -624,7 +623,7 @@ export class Sortable implements ISortable {
 
       // Handle function case
       if (typeof value === 'function') {
-        return this._toFn(value(to, from, dragEl, evt), pull)(to, from, dragEl, evt);
+        return this._toFn(value(to, from, activeEl, evt), pull)(to, from, activeEl, evt);
       }
 
       // Handle string/array case
@@ -638,39 +637,39 @@ export class Sortable implements ISortable {
     const directionOption = this.options.direction || 'vertical';
 
     if (typeof directionOption === 'function') {
-      return directionOption.call(this, evt, target, this.dragEl);
+      return directionOption.call(this, evt, target, this.activeEl);
     }
 
     return directionOption;
   }
 
-  private _hideGhost(): void {
-    if (this.ghostEl) {
-      css(this.ghostEl, 'display', 'none');
+  private _hideDraggingEl(): void {
+    if (this.draggingEl) {
+      css(this.draggingEl, 'display', 'none');
     }
   }
 
-  private _showGhost(): void {
-    if (this.ghostEl) {
-      css(this.ghostEl, 'display', '');
+  private _showDraggingEl(): void {
+    if (this.draggingEl) {
+      css(this.draggingEl, 'display', '');
     }
   }
 
-  private _appendGhost(): void {
-    if (!this.dragEl) return;
+  private _appendDraggingEl(): void {
+    if (!this.activeEl) return;
 
     const container = this.options.fallbackOnBody ? document.body : this.rootEl;
-    const rect = getRect(this.dragEl, true, this.options.fallbackOnBody, true, container);
+    const rect = getRect(this.activeEl, true, this.options.fallbackOnBody, true, container);
 
-    this.ghostEl = this.dragEl.cloneNode(true) as HTMLElement;
-    const ghostClass = this.options.ghostClass || 'sortable-ghost';
+    this.draggingEl = this.activeEl.cloneNode(true) as HTMLElement;
+    const draggingClass = this.options.draggingClass || 'sortable-dragging';
     const fallbackClass = this.options.fallbackClass || 'sortable-fallback';
-    if (this.ghostEl) {
-      toggleClass(this.ghostEl, fallbackClass, true);
-      toggleClass(this.ghostEl, ghostClass, true);
+    if (this.draggingEl) {
+      toggleClass(this.draggingEl, fallbackClass, true);
+      toggleClass(this.draggingEl, draggingClass, true);
     }
 
-    css(this.ghostEl, {
+    css(this.draggingEl, {
       transition: '',
       transform: '',
       boxSizing: 'border-box',
@@ -686,18 +685,18 @@ export class Sortable implements ISortable {
       display: '',
     });
 
-    container.appendChild(this.ghostEl);
+    container.appendChild(this.draggingEl);
   }
 
   private _dragStarted(): void {
-    if (!this.dragEl || !this.ghostEl) return;
+    if (!this.activeEl || !this.draggingEl) return;
     this.awaitingDragStarted = false;
-    const ghostClass = this.options.ghostClass || 'sortable-ghost';
-    if (this.dragEl) {
-      toggleClass(this.dragEl, ghostClass, true);
+    const draggingClass = this.options.draggingClass || 'sortable-dragging';
+    if (this.activeEl) {
+      toggleClass(this.activeEl, draggingClass, true);
     }
     Sortable.active = this;
-    Sortable.dragged = this.dragEl;
+    Sortable.draggedEl = this.activeEl;
     this._dispatchSortEvent('start');
   }
 
@@ -715,9 +714,9 @@ export class Sortable implements ISortable {
   }).bind(this);
 
   private _disableDelayedDrag(): void {
-    if (!this.dragEl) return;
+    if (!this.activeEl) return;
 
-    css(this.dragEl, 'transform', '');
+    css(this.activeEl, 'transform', '');
     clearTimeout(this.dragStartTimer);
     this._disableDelayedDragEvents();
     this._nulling(); // Reset state when drag is disabled
