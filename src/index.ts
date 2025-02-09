@@ -9,4 +9,3 @@ export { animate } from '@animation/animation.utils';
 
 // DOM utilities
 export { closest, getRect } from '@dom/dom.utils';
-export { off, on } from '@dom/events.utils';
