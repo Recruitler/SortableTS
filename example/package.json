@@ -1,0 +1,21 @@
+{
+    "name": "sortablets-examples",
+    "version": "1.0.0",
+    "description": "Examples for SortableTS",
+    "type": "module",
+    "scripts": {
+      "build": "tsc",
+      "watch": "tsc -w",
+      "dev": "vite",
+      "build-vite": "vite build",
+      "preview": "vite preview",
+    "styles": "npx tailwindcss -i ./src/style.css -o ./src/output.css -w"
+    },
+    "devDependencies": {
+      "typescript": "^5.0.2",
+      "vite": "^4.4.5",
+      "autoprefixer": "^10.4.17",
+      "tailwindcss": "^3.4.1",
+      "postcss": "^8.4.35"
+    }
+  }
