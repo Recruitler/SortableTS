@@ -6,6 +6,12 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0" />
     <title>SortableTS Examples</title>
+    <link
+      rel="stylesheet"
+      href="./src/output.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <script src="/dist/sortablets.js"></script>
   </head>
   <body class="bg-gray-50 min-h-screen">
@@ -18,14 +24,14 @@
         class="w-32" />
     </a>
 
-    <div class="container mx-auto px-4 py-8">
+    <div class="container max-w-[960px] mx-auto px-4 py-8">
       <!-- Header -->
       <div class="text-center mb-12">
         <h1 class="text-4xl font-bold text-gray-900 mb-4">SortableTS</h1>
         <p class="text-xl text-gray-600 mb-8">TypeScript library for reorderable drag-and-drop lists</p>
 
         <!-- Navigation -->
-        <nav class="bg-white rounded-lg shadow-sm p-6 max-w-2xl mx-auto">
+        <nav class="bg-white rounded-[5px] shadow-sm p-6 max-w-2xl mx-auto">
           <div class="grid md:grid-cols-2 gap-8">
             <div>
               <h3 class="font-semibold text-gray-900 mb-3">Features</h3>
@@ -110,284 +116,371 @@
           </div>
         </nav>
       </div>
-
-      <!-- Simple List -->
-      <section
-        id="simple-list"
-        class="mb-12">
-        <div class="bg-white rounded-lg shadow-sm p-6">
-          <h2 class="text-2xl font-semibold text-gray-900 mb-4">Simple List</h2>
-          <div
-            id="example1"
-            class="space-y-2">
-            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 1</div>
-            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 2</div>
-            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 3</div>
-            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 4</div>
-            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 5</div>
-          </div>
-          <div class="mt-4 bg-gray-800 rounded-lg p-4">
-            <pre class="text-gray-100">
-              <code>
-                new Sortable(example1, {
-                  animation: 150,
-                  ghostClass: 'opacity-50'
-                });
+      <!-- features -->
+      <div>
+        <!-- Simple List -->
+        <section
+          id="simple-list"
+          class="mb-12">
+          <div class="bg-white rounded-[8px] shadow-sm p-6">
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4">Simple List</h2>
+            <div
+              id="example1"
+              class="rounded-[5px] overflow-hidden">
+              <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 1</div>
+              <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 2</div>
+              <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 3</div>
+              <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 4</div>
+              <div class="px-4 py-3 bg-gray-50 border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 5</div>
+            </div>
+            <div class="mt-4 py-4 px-8 border-l-[1px]">
+              <code class="">
+                <p class=""><span class="text-style_blue">new</span> <span class="text-style_class">Sortable</span><span class="text-slate-300">(</span>example1, <span class="text-slate-300">{</span></p>
+                <p class="ml-6">animation: <span class="text-style_num">150</span>,</p>
+                <p class="ml-6">ghostClass: <span class="text-style_str">'opacity-50'</span></p>
+                <p class="text-slate-300">});</p>
               </code>
-            </pre>
-          </div>
-        </div>
-      </section>
-
-      <!-- Shared Lists -->
-      <section
-        id="shared-lists"
-        class="mb-12">
-        <div class="bg-white rounded-lg shadow-sm p-6">
-          <h2 class="text-2xl font-semibold text-gray-900 mb-4">Shared Lists</h2>
-          <div class="grid md:grid-cols-2 gap-6">
-            <div
-              id="example2-left"
-              class="space-y-2">
-              <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 1</div>
-              <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 2</div>
-              <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 3</div>
-            </div>
-            <div
-              id="example2-right"
-              class="space-y-2">
-              <div class="p-4 bg-blue-50 rounded-lg border border-blue-200 cursor-move hover:bg-blue-100 transition-colors">Item 4</div>
-              <div class="p-4 bg-blue-50 rounded-lg border border-blue-200 cursor-move hover:bg-blue-100 transition-colors">Item 5</div>
-              <div class="p-4 bg-blue-50 rounded-lg border border-blue-200 cursor-move hover:bg-blue-100 transition-colors">Item 6</div>
             </div>
           </div>
-          <div class="mt-4 bg-gray-800 rounded-lg p-4">
-            <pre class="text-gray-100">
-              <code>new Sortable(example2Left, {
-                group: 'shared',
-                animation: 150
-              });
+        </section>
 
-              new Sortable(example2Right, {
-                group: 'shared',
-                animation: 150
-              });
-              </code></pre>
-          </div>
-        </div>
-      </section>
-
-      <!-- Handle Example -->
-      <section
-        id="handle"
-        class="mb-12">
-        <div class="bg-white rounded-lg shadow-sm p-6">
-          <h2 class="text-2xl font-semibold text-gray-900 mb-4">Handle</h2>
-          <div
-            id="example5"
-            class="space-y-2">
-            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 flex items-center">
-              <i class="fas fa-grip-vertical handle mr-3 text-gray-400 cursor-move"></i>
-              <span>Item 1</span>
+        <!-- Shared Lists -->
+        <section
+          id="shared-lists"
+          class="mb-12">
+          <div class="bg-white rounded-[8px] shadow-sm p-6">
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4">Shared Lists</h2>
+            <div class="flex w-full justify-between items-start gap-3">
+              <div
+                id="example2-left"
+                class="rounded-[5px] w-full overflow-hidden">
+                <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 1</div>
+                <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 2</div>
+                <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 3</div>
+                <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 4</div>
+                <div class="px-4 py-3 bg-gray-50 border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 5</div>
+              </div>
+              <div
+                id="example2-right"
+                class="rounded-[5px] w-full overflow-hidden">
+                <div class="px-4 py-3 bg-blue-50 border-b-[1px] border-blue-200 cursor-move hover:bg-blue-100 transition-colors">Item 6</div>
+                <div class="px-4 py-3 bg-blue-50 border-b-[1px] border-blue-200 cursor-move hover:bg-blue-100 transition-colors">Item 7</div>
+                <div class="px-4 py-3 bg-blue-50 border-b-[1px] border-blue-200 cursor-move hover:bg-blue-100 transition-colors">Item 8</div>
+                <div class="px-4 py-3 bg-blue-50 border-b-[1px] border-blue-200 cursor-move hover:bg-blue-100 transition-colors">Item 9</div>
+                <div class="px-4 py-3 bg-blue-50 border-blue-200 cursor-move hover:bg-blue-100 transition-colors">Item 10</div>
+              </div>
             </div>
-            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 flex items-center">
-              <i class="fas fa-grip-vertical handle mr-3 text-gray-400 cursor-move"></i>
-              <span>Item 2</span>
-            </div>
-            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 flex items-center">
-              <i class="fas fa-grip-vertical handle mr-3 text-gray-400 cursor-move"></i>
-              <span>Item 3</span>
-            </div>
-          </div>
-          <div class="mt-4 bg-gray-800 rounded-lg p-4">
-            <pre class="text-gray-100">
-              <code>new Sortable(example5, {
-                  handle: '.handle',
-                  animation: 150
-               });
-            </code>
-          </pre>
-          </div>
-        </div>
-      </section>
-
-      <!-- Grid Example -->
-      <section
-        id="grid"
-        class="mb-12">
-        <div class="bg-white rounded-lg shadow-sm p-6">
-          <h2 class="text-2xl font-semibold text-gray-900 mb-4">Grid</h2>
-          <div
-            id="gridDemo"
-            class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">1</div>
-            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">2</div>
-            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">3</div>
-            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">4</div>
-            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">5</div>
-            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">6</div>
-            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">7</div>
-            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">8</div>
-          </div>
-        </div>
-      </section>
-    </div>
-
-    <!-- Cloning -->
-    <section
-      id="cloning"
-      class="mb-12">
-      <div class="bg-white rounded-lg shadow-sm p-6">
-        <h2 class="text-2xl font-semibold text-gray-900 mb-4">Cloning</h2>
-        <p class="text-gray-600 mb-4">Try dragging from one list to another. The item you drag will be cloned and the clone will stay in the original list.</p>
-        <div class="grid md:grid-cols-2 gap-6">
-          <div
-            id="example3-left"
-            class="space-y-2">
-            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 1</div>
-            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 2</div>
-            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 3</div>
-          </div>
-          <div
-            id="example3-right"
-            class="space-y-2">
-            <div class="p-4 bg-blue-50 rounded-lg border border-blue-200 cursor-move hover:bg-blue-100 transition-colors">Item 4</div>
-            <div class="p-4 bg-blue-50 rounded-lg border border-blue-200 cursor-move hover:bg-blue-100 transition-colors">Item 5</div>
-            <div class="p-4 bg-blue-50 rounded-lg border border-blue-200 cursor-move hover:bg-blue-100 transition-colors">Item 6</div>
-          </div>
-        </div>
-        <div class="mt-4 bg-gray-800 rounded-lg p-4">
-          <pre class="text-gray-100"><code>new Sortable(example3Left, {
-            group: {
-              name: 'shared',
-              pull: 'clone'
-            },
-            animation: 150
-          });
-
-          new Sortable(example3Right, {
-            group: {
-              name: 'shared',
-              pull: 'clone'
-            },
-            animation: 150
-          });</code></pre>
-        </div>
-      </div>
-    </section>
-
-    <!-- Sorting Disabled -->
-    <section
-      id="sorting-disabled"
-      class="mb-12">
-      <div class="bg-white rounded-lg shadow-sm p-6">
-        <h2 class="text-2xl font-semibold text-gray-900 mb-4">Disable Sorting</h2>
-        <p class="text-gray-600 mb-4">Try sorting the list on the left. It is not possible because it has its sort option set to false. However, you can still drag from the left list to the right list.</p>
-        <div class="grid md:grid-cols-2 gap-6">
-          <div
-            id="example4-left"
-            class="space-y-2">
-            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 1</div>
-            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 2</div>
-            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 3</div>
-          </div>
-          <div
-            id="example4-right"
-            class="space-y-2">
-            <div class="p-4 bg-blue-50 rounded-lg border border-blue-200 cursor-move hover:bg-blue-100 transition-colors">Item 4</div>
-            <div class="p-4 bg-blue-50 rounded-lg border border-blue-200 cursor-move hover:bg-blue-100 transition-colors">Item 5</div>
-            <div class="p-4 bg-blue-50 rounded-lg border border-blue-200 cursor-move hover:bg-blue-100 transition-colors">Item 6</div>
-          </div>
-        </div>
-        <div class="mt-4 bg-gray-800 rounded-lg p-4">
-          <pre class="text-gray-100"><code>new Sortable(example4Left, {
-            group: {
-              name: 'shared',
-              pull: 'clone',
-              put: false
-            },
-            animation: 150,
-            sort: false
-          });
-
-          new Sortable(example4Right, {
-            group: 'shared',
-            animation: 150
-          });</code></pre>
-        </div>
-      </div>
-    </section>
-
-    <!-- Filter -->
-    <section
-      id="filter"
-      class="mb-12">
-      <div class="bg-white rounded-lg shadow-sm p-6">
-        <h2 class="text-2xl font-semibold text-gray-900 mb-4">Filter</h2>
-        <p class="text-gray-600 mb-4">Try dragging the item with a red background. It cannot be done because that item is filtered out using the filter option.</p>
-        <div
-          id="example6"
-          class="space-y-2">
-          <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 1</div>
-          <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 2</div>
-          <div class="p-4 bg-red-100 rounded-lg border border-red-200 filtered">Filtered Item (Can't move)</div>
-          <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 3</div>
-          <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 4</div>
-        </div>
-        <div class="mt-4 bg-gray-800 rounded-lg p-4">
-          <pre class="text-gray-100"><code>new Sortable(example6, {
-            filter: '.filtered',
-            animation: 150
-          });</code></pre>
-        </div>
-      </div>
-    </section>
-
-    <!-- Nested Sortables -->
-    <section
-      id="nested"
-      class="mb-12">
-      <div class="bg-white rounded-lg shadow-sm p-6">
-        <h2 class="text-2xl font-semibold text-gray-900 mb-4">Nested Sortables</h2>
-        <p class="text-gray-600 mb-4">Items can be nested indefinitely and you can drag and drop between nested lists.</p>
-        <div
-          id="nestedDemo"
-          class="space-y-4">
-          <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <div class="font-medium mb-2">Item 1</div>
-            <div class="pl-4 space-y-2">
-              <div class="p-3 bg-blue-50 rounded border border-blue-200 cursor-move">Nested Item 1.1</div>
-              <div class="p-3 bg-blue-50 rounded border border-blue-200 cursor-move">Nested Item 1.2</div>
-              <div class="p-3 bg-blue-50 rounded border border-blue-200">
-                <div class="font-medium mb-2">Nested Item 1.3</div>
-                <div class="pl-4 space-y-2">
-                  <div class="p-2 bg-green-50 rounded border border-green-200 cursor-move">Sub-nested Item 1.3.1</div>
-                  <div class="p-2 bg-green-50 rounded border border-green-200 cursor-move">Sub-nested Item 1.3.2</div>
-                </div>
+            <div class="mt-4 py-4 px-8 border-l-[1px]">
+              <div>
+                <code class="">
+                  <p class=""><span class="text-style_blue">new</span> <span class="text-style_class">Sortable</span><span class="text-slate-300">(</span>example2Left, <span class="text-slate-300">{</span></p>
+                  <p class="ml-6"><span class="text-style_blue">group</span>: <span class="text-style_str">'shared'</span>, <span class="text-style_comment">// set both lists to same group</span></p>
+                  <p class="ml-6">animation: <span class="text-style_num">150</span></p>
+                  <p class="text-slate-300">});</p>
+                </code>
+              </div>
+              <div class="mt-3">
+                <code c>
+                  <p class=""><span class="text-style_blue">new</span> <span class="text-style_class">Sortable</span><span class="text-slate-300">(</span>example2Right, <span class="text-slate-300">{</span></p>
+                  <p class="ml-6"><span class="text-style_blue">group</span>: <span class="text-style_str">'shared'</span>,</p>
+                  <p class="ml-6">animation: <span class="text-style_num">150</span></p>
+                  <p class="text-slate-300">});</p>
+                </code>
               </div>
             </div>
           </div>
-          <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <div class="font-medium mb-2">Item 2</div>
-            <div class="pl-4 space-y-2">
-              <div class="p-3 bg-blue-50 rounded border border-blue-200 cursor-move">Nested Item 2.1</div>
-              <div class="p-3 bg-blue-50 rounded border border-blue-200 cursor-move">Nested Item 2.2</div>
+        </section>
+
+        <!-- Cloning -->
+        <section
+          id="cloning"
+          class="mb-12">
+          <div class="bg-white rounded-[8px] shadow-sm p-6">
+            <h2 class="text-2xl mb-3 font-semibold text-gray-900">Cloning</h2>
+            <p class="mb-8 opacity-80">Try dragging from one list to another. The item you drag will be cloned and the clone will stay in the original list.</p>
+            <div class="flex w-full justify-between items-start gap-3">
+              <div
+                id="example2-left"
+                class="rounded-[5px] w-full overflow-hidden">
+                <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 1</div>
+                <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 2</div>
+                <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 3</div>
+                <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 4</div>
+                <div class="px-4 py-3 bg-gray-50 border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 5</div>
+              </div>
+              <div
+                id="example2-right"
+                class="rounded-[5px] w-full overflow-hidden">
+                <div class="px-4 py-3 bg-blue-50 border-b-[1px] border-blue-200 cursor-move hover:bg-blue-100 transition-colors">Item 6</div>
+                <div class="px-4 py-3 bg-blue-50 border-b-[1px] border-blue-200 cursor-move hover:bg-blue-100 transition-colors">Item 7</div>
+                <div class="px-4 py-3 bg-blue-50 border-b-[1px] border-blue-200 cursor-move hover:bg-blue-100 transition-colors">Item 8</div>
+                <div class="px-4 py-3 bg-blue-50 border-b-[1px] border-blue-200 cursor-move hover:bg-blue-100 transition-colors">Item 9</div>
+                <div class="px-4 py-3 bg-blue-50 border-blue-200 cursor-move hover:bg-blue-100 transition-colors">Item 10</div>
+              </div>
+            </div>
+            <div class="mt-4 py-4 px-8 border-l-[1px]">
+              <div>
+                <code class="">
+                  <p class=""><span class="text-style_blue">new</span> <span class="text-style_class">Sortable</span><span class="text-slate-300">(</span>example3Left, <span class="text-slate-300">{</span></p>
+                  <div class="ml-6">
+                    <span class="text-style_blue">group</span>: <span class="text-slate-300">{</span>
+                    <p class="ml-6">name: <span class="text-style_str">'shared'</span>,</p>
+                    <p class="ml-6">pull: <span class="text-style_str">'clone'</span> <span class="text-style_comment">// To clone: set pull to 'clone'</span></p>
+                    <p><span class="text-slate-300"> }</span>,</p>
+                  </div>
+                  <p class="ml-6">animation: <span class="text-style_num">150</span></p>
+                  <p class="text-slate-300">});</p>
+                </code>
+              </div>
+              <div class="mt-3">
+                <code class="">
+                  <p class=""><span class="text-style_blue">new</span> <span class="text-style_class">Sortable</span><span class="text-slate-300">(</span>example3Right, <span class="text-slate-300">{</span></p>
+                  <div class="ml-6">
+                    <span class="text-style_blue">group</span>: <span class="text-slate-300">{</span>
+                    <p class="ml-6">name: <span class="text-style_str">'shared'</span>,</p>
+                    <p class="ml-6">pull: <span class="text-style_str">'clone'</span></p>
+                    <p><span class="text-slate-300"> }</span>,</p>
+                  </div>
+                  <p class="ml-6">animation: <span class="text-style_num">150</span></p>
+                  <p class="text-slate-300">});</p>
+                </code>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="mt-4 bg-gray-800 rounded-lg p-4">
-          <pre class="text-gray-100"><code>// Loop through each nested sortable element
-            document.querySelectorAll('.nested-sortable').forEach(el => {
-              new Sortable(el, {
-                group: 'nested',
-                animation: 150,
-                fallbackOnBody: true,
-                swapThreshold: 0.65
-              });
-            });</code></pre>
-        </div>
+        </section>
+
+        <!-- Disable Sorting -->
+        <section
+          id="sorting-disabled"
+          class="mb-12">
+          <div class="bg-white rounded-[8px] shadow-sm p-6">
+            <h2 class="text-2xl mb-3 font-semibold text-gray-900">Disabling Sorting</h2>
+            <p class="mb-8 opacity-80">Try sorting the list on the left. It is not possible because it has it's sort option set to false. However, you can still drag from the list on the left to the list on the right.</p>
+            <div class="flex w-full justify-between items-start gap-3">
+              <div
+                id="example2-left"
+                class="rounded-[5px] w-full overflow-hidden">
+                <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 1</div>
+                <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 2</div>
+                <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 3</div>
+                <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 4</div>
+                <div class="px-4 py-3 bg-gray-50 border-gray-200 cursor-move hover:bg-gray-100 transition-colors">Item 5</div>
+              </div>
+              <div
+                id="example2-right"
+                class="rounded-[5px] w-full overflow-hidden">
+                <div class="px-4 py-3 bg-blue-50 border-b-[1px] border-blue-200 cursor-move hover:bg-blue-100 transition-colors">Item 6</div>
+                <div class="px-4 py-3 bg-blue-50 border-b-[1px] border-blue-200 cursor-move hover:bg-blue-100 transition-colors">Item 7</div>
+                <div class="px-4 py-3 bg-blue-50 border-b-[1px] border-blue-200 cursor-move hover:bg-blue-100 transition-colors">Item 8</div>
+                <div class="px-4 py-3 bg-blue-50 border-b-[1px] border-blue-200 cursor-move hover:bg-blue-100 transition-colors">Item 9</div>
+                <div class="px-4 py-3 bg-blue-50 border-blue-200 cursor-move hover:bg-blue-100 transition-colors">Item 10</div>
+              </div>
+            </div>
+            <div class="mt-4 py-4 px-8 border-l-[1px]">
+              <div>
+                <code class="">
+                  <p class=""><span class="text-style_blue">new</span> <span class="text-style_class">Sortable</span><span class="text-slate-300">(</span>example4Left, <span class="text-slate-300">{</span></p>
+                  <div class="ml-6">
+                    <span class="text-style_blue">group</span>: <span class="text-slate-300">{</span>
+                    <p class="ml-6">name: <span class="text-style_str">'shared'</span>,</p>
+                    <p class="ml-6">pull: <span class="text-style_str">'clone'</span></p>
+                    <p class="ml-6">put: <span class="text-style_blue">false</span> <span class="text-style_comment">// Do not allow items to be put into this list</span></p>
+                    <p><span class="text-slate-300"> }</span>,</p>
+                  </div>
+                  <p class="ml-6">animation: <span class="text-style_num">150</span>,</p>
+                  <p class="ml-6">sort: <span class="text-style_blue">false</span> <span class="text-style_comment">// To disable sorting: set sort to false</span></p>
+                  <p class="text-slate-300">});</p>
+                </code>
+              </div>
+              <div class="mt-3">
+                <code class="">
+                  <p class=""><span class="text-style_blue">new</span> <span class="text-style_class">Sortable</span><span class="text-slate-300">(</span>example4Right, <span class="text-slate-300">{</span></p>
+                  <p class="ml-6"><span class="text-style_blue">group</span>: <span class="text-style_str">'shared'</span>,</p>
+                  <p class="ml-6">animation: <span class="text-style_num">150</span></p>
+                  <p class="text-slate-300">});</p>
+                </code>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Handle Example -->
+        <section
+          id="handle"
+          class="mb-12">
+          <div class="bg-white rounded-[5px] shadow-sm p-6">
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4">Handle</h2>
+            <div
+              id="example5"
+              class="rounded-[5px] overflow-hidden">
+              <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 flex items-center">
+                <i class="fa-solid fa-arrows-up-down-left-right handle mr-3 text-black cursor-move"></i>
+                <span>Item 1</span>
+              </div>
+              <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 flex items-center">
+                <i class="fa-solid fa-arrows-up-down-left-right handle mr-3 text-black cursor-move"></i>
+                <span>Item 2</span>
+              </div>
+              <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 flex items-center">
+                <i class="fa-solid fa-arrows-up-down-left-right handle mr-3 text-black cursor-move"></i>
+                <span>Item 3</span>
+              </div>
+              <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 flex items-center">
+                <i class="fa-solid fa-arrows-up-down-left-right handle mr-3 text-black cursor-move"></i>
+                <span>Item 4</span>
+              </div>
+              <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 flex items-center">
+                <i class="fa-solid fa-arrows-up-down-left-right handle mr-3 text-black cursor-move"></i>
+                <span>Item 5</span>
+              </div>
+            </div>
+            <div class="mt-4 py-4 px-8 border-l-[1px]">
+              <code class="">
+                <p class=""><span class="text-style_blue">new</span> <span class="text-style_class">Sortable</span><span class="text-slate-300">(</span>example5, <span class="text-slate-300">{</span></p>
+                <p class="ml-6">handle: <span class="text-style_str">'.handle'</span>, <span class="text-style_comment">// handle's class</span></p>
+                <p class="ml-6">animation: <span class="text-style_num">150</span></p>
+                <p class="text-slate-300">});</p>
+              </code>
+            </div>
+          </div>
+        </section>
+
+        <!-- Filtered Example -->
+        <section
+          id="filter"
+          class="">
+          <div class="bg-white rounded-[8px] shadow-sm p-6">
+            <h2 class="text-2xl font-semibold text-gray-900 mb-3">Filter</h2>
+            <p class="mb-8 opacity-80">Try dragging the item with a red background. It cannot be done, because that item is filtered out using the filter option.</p>
+            <div
+              id="example5"
+              class="rounded-[5px] overflow-hidden">
+              <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 flex items-center">Item 1</div>
+              <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 flex items-center">Item 2</div>
+              <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 flex items-center">Item 3</div>
+              <div class="px-4 py-3 bg-red-600 border-b-[1px] border-gray-200 flex items-center">Filtered</div>
+              <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 flex items-center">Item 4</div>
+              <div class="px-4 py-3 bg-gray-50 border-b-[1px] border-gray-200 flex items-center">Item 5</div>
+            </div>
+            <div class="mt-4 py-4 px-8 border-l-[1px]">
+              <code class="">
+                <p class=""><span class="text-style_blue">new</span> <span class="text-style_class">Sortable</span><span class="text-slate-300">(</span>example5, <span class="text-slate-300">{</span></p>
+                <p class="ml-6">handle: <span class="text-style_str">'.handle'</span>, <span class="text-style_comment">// handle's class</span></p>
+                <p class="ml-6">animation: <span class="text-style_num">150</span></p>
+                <p class="text-slate-300">});</p>
+              </code>
+            </div>
+          </div>
+        </section>
       </div>
-    </section>
+
+      <!-- Examples -->
+      <div class="mt-6">
+        <h3 class="text-3xl mb-6 pb-4 border-b-[1px]">Examples</h3>
+        <!-- Grid Example -->
+        <section
+          id="grid"
+          class="mb-12">
+          <div class="bg-white rounded-[5px] shadow-sm p-6">
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4">Grid Example</h2>
+            <div
+              id="gridDemo"
+              class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-8 gap-4">
+              <div class="p-4 h-20 text-sm bg-gray-50 border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">Item 1</div>
+              <div class="p-4 h-20 text-sm bg-gray-50 border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">Item 2</div>
+              <div class="p-4 h-20 text-sm bg-gray-50 border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">Item 3</div>
+              <div class="p-4 h-20 text-sm bg-gray-50 border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">Item 4</div>
+              <div class="p-4 h-20 text-sm bg-gray-50 border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">Item 5</div>
+              <div class="p-4 h-20 text-sm bg-gray-50 border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">Item 6</div>
+              <div class="p-4 h-20 text-sm bg-gray-50 border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">Item 7</div>
+              <div class="p-4 h-20 text-sm bg-gray-50 border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">Item 8</div>
+              <div class="p-4 h-20 text-sm bg-gray-50 border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">Item 9</div>
+              <div class="p-4 h-20 text-sm bg-gray-50 border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">Item 10</div>
+              <div class="p-4 h-20 text-sm bg-gray-50 border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">Item 11</div>
+              <div class="p-4 h-20 text-sm bg-gray-50 border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">Item 12</div>
+              <div class="p-4 h-20 text-sm bg-gray-50 border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">Item 13</div>
+              <div class="p-4 h-20 text-sm bg-gray-50 border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">Item 14</div>
+              <div class="p-4 h-20 text-sm bg-gray-50 border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">Item 15</div>
+              <div class="p-4 h-20 text-sm bg-gray-50 border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">Item 16</div>
+              <div class="p-4 h-20 text-sm bg-gray-50 border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">Item 17</div>
+              <div class="p-4 h-20 text-sm bg-gray-50 border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">Item 18</div>
+              <div class="p-4 h-20 text-sm bg-gray-50 border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">Item 19</div>
+              <div class="p-4 h-20 text-sm bg-gray-50 border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">Item 20</div>
+              <div class="p-4 h-20 text-sm bg-gray-50 border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">Item 21</div>
+              <div class="p-4 h-20 text-sm bg-gray-50 border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">Item 22</div>
+              <div class="p-4 h-20 text-sm bg-gray-50 border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">Item 23</div>
+              <div class="p-4 h-20 text-sm bg-gray-50 border border-gray-200 cursor-move hover:bg-gray-100 transition-colors text-center">Item 24</div>
+            </div>
+          </div>
+        </section>
+        <!-- Nested Sortables -->
+        <section
+          id="nested"
+          class="mb-12">
+          <div class="bg-white rounded-[5px] shadow-sm p-6">
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4">Nested Sortables</h2>
+            <p class="text-gray-600 mb-4">
+              NOTE: When using nested Sortables with animation, it is recommended that the fallbackOnBody option is set to true. It is also always recommended that either the invertSwap option is set to true, or the swapThreshold option is lower than the default value of 1 (eg 0.65).
+            </p>
+            <div
+              id="nestedDemo"
+              class="space-y-1">
+              <div class="p-4 bg-gray-50 rounded-[5px] border border-gray-200">
+                <div class="font-medium mb-2">Item 1.1</div>
+                <div class="space-y-2">
+                  <div class="p-3 bg-blue-50 rounded border border-blue-200 cursor-move">Item 2.1</div>
+                  <div class="p-3 bg-blue-50 rounded px-4 border border-blue-200">
+                    <div class="font-medium mb-2">Item 2.2</div>
+                    <div class="space-y-2">
+                      <div class="p-2 bg-green-50 rounded border border-green-200 cursor-move">Item 3.1</div>
+                      <div class="p-2 bg-green-50 rounded border border-green-200 cursor-move">Item 3.2</div>
+                      <div class="p-2 bg-green-50 rounded border border-green-200 cursor-move">Item 3.3</div>
+                      <div class="p-2 bg-green-50 rounded border border-green-200 cursor-move">Item 3.4</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="p-4 bg-gray-50 rounded-[5px] border border-gray-200">
+                <div class="font-medium">Item 1.2</div>
+              </div>
+              <div class="p-4 bg-gray-50 rounded-[5px] border border-gray-200">
+                <div class="font-medium">Item 1.3</div>
+              </div>
+              <div class="p-4 bg-gray-50 rounded-[5px] border border-gray-200">
+                <div class="font-medium mb-2">Item 1.4</div>
+                <div class="space-y-2">
+                  <div class="p-3 bg-blue-50 rounded-[5px] border border-blue-200 cursor-move">Nested Item 2.1</div>
+                  <div class="p-3 bg-blue-50 rounded-[5px] border border-blue-200 cursor-move">Nested Item 2.2</div>
+                  <div class="p-3 bg-blue-50 rounded-[5px] border border-blue-200 cursor-move">Nested Item 2.3</div>
+                  <div class="p-3 bg-blue-50 rounded-[5px] border border-blue-200 cursor-move">Nested Item 2.4</div>
+                </div>
+              </div>
+            </div>
+            <div class="mt-4 py-4 px-8 border-l-[1px]">
+              <div>
+                <code class="">
+                  <p><span class="text-style_comment">// Loop through each nested sortable element</span></p>
+                  <p class="">
+                    <span class="text-style_blue">for</span> <span class="text-slate-300">(</span>var i = <span class="text-style_num">0</span>; i <span class="text-gray-300">&lt;</span> nestedSortables.length; i++ <span class="text-slate-300">)</span> <span class="text-slate-300">{</span>
+                  </p>
+                  <div class="ml-6">
+                    <p><span class="text-style_blue">new </span> <span class="text-style_class">Sortable</span> <span class="text-gray-300">(</span>nestedSortables[i],<span class="text-slate-300"> {</span></p>
+                    <p class="ml-6">group: <span class="text-style_str">'nested'</span>,</p>
+                    <p class="ml-6">animation: <span class="text-style_num">150</span>,</p>
+
+                    <p class="ml-6">fallbackOnBody: <span class="text-style_blue">true</span>,</p>
+                    <p class="ml-6">swapThreshold: <span class="text-style_num">0.89</span></p>
+                    <p><span class="text-slate-300"> });</span></p>
+                  </div>
+                  <p class="text-slate-300">}</p>
+                </code>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
     <script
       type="module"
       src="/src/main.ts"></script>
