@@ -12,7 +12,8 @@
     "build": "vite build && rollup -c",
     "preview": "vite preview",
     "clean": "rimraf dist",
-    "example": "npm run build && vite example"
+    "example": "npm run build && vite example",
+    "styles": "npx tailwindcss -i ./example/src/style.css -o ./example/src/output.css -w"
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^12.1.2",
