@@ -8,6 +8,7 @@ tmp
 
 # dependencies
 node_modules
+example/node_modules/
 
 # Fix for issue when working on the repo in a dev container
 .pnpm-store
