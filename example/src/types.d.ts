@@ -11,7 +11,7 @@ interface SortableOptions {
   filter?: string;
   preventOnFilter?: boolean;
   draggable?: string;
-  ghostClass?: string;
+  previewClass?: string;
   chosenClass?: string;
   dragClass?: string;
   swapThreshold?: number;
@@ -40,10 +40,10 @@ declare class Sortable {
   constructor(element: HTMLElement, options?: SortableOptions);
 }
 
-declare global {
-  interface Window {
-    SortableTS: {
-      Sortable: typeof Sortable;
-    };
-  }
-}
+// declare global {
+//   interface Window {
+//     SortableTS: {
+//       Sortable: typeof Sortable;
+//     };
+//   }
+// }

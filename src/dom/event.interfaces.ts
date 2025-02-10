@@ -30,5 +30,6 @@ export interface IEvent extends CustomEvent {
   pullMode?: 'clone' | boolean;
 }
 
-export type ISortableEventTypes = MouseEvent | TouchEvent | PointerEvent;
-export type ISortableEventListener = (evt: ISortableEventTypes) => void;
+// Browser events that trigger Sortable functionality
+export type ISortableDOMEvents = MouseEvent | TouchEvent | PointerEvent | DragEvent;
+export type ISortableDOMEventListener = (evt: ISortableDOMEvents) => void;

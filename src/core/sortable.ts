@@ -1,69 +1,15 @@
-import { ISortable, ISortableGroup, ISortableOptions, SortableDirection } from '@core/sortable.interfaces';
-import { getInstance, removeInstance, setInstance } from '@core/store';
-
+import { ISortableDOMEventListener, ISortableDOMEvents } from '@/dom/event.interfaces';
+import { getEventCoordinates, getTouchFromEvent } from '@/utils/touch';
 import { AnimationStateManager } from '@animation/animation';
 import { IAnimationState } from '@animation/animation.interfaces';
+import { ISortable, ISortableGroup, ISortableOptions, SortableDirection } from '@core/sortable.interfaces';
 import { closest, css, getRect, matrix, toggleClass } from '@dom/dom.utils';
-import { off, on } from '@dom/events.utils';
-import { getElementsArray } from '@utils/element.utils';
+import { getElementsArray } from '@utils/element';
+import { getScroll, getScrollParent } from '@utils/scroll';
+import { CleanupManager } from '../cleanup.manager';
+import { DragState, SortableState } from './state';
 
 export class Sortable implements ISortable {
-  static active: ISortable | null = null;
-  static draggedEl: HTMLElement | null = null;
-  static previewEl: HTMLElement | null = null;
-  static cloneEl: HTMLElement | null = null;
-  private activeEl: HTMLElement | null = null;
-  private parentEl: HTMLElement | null = null;
-  private draggingEl: HTMLElement | null = null;
-  private cloneEl: HTMLElement | null = null;
-  private rootEl: HTMLElement;
-  private nextEl: HTMLElement | null = null;
-  private lastDownEl: HTMLElement | null = null;
-
-  private oldIndex: number | null = null;
-  private newIndex: number | null = null;
-  private oldDraggableIndex: number | null = null;
-  private newDraggableIndex: number | null = null;
-
-  private awaitingDragStarted = false;
-  private ignoreNextClick = false;
-  private moved = false;
-
-  public options: ISortableOptions;
-  public el: HTMLElement;
-
-  private animationManager: AnimationStateManager;
-  private dragStartTimer?: number;
-  private _lastX: number = 0;
-  private _lastY: number = 0;
-
-  private _normalizedGroup: ISortableGroup | null = null;
-
-  constructor(el: HTMLElement, options?: Partial<ISortableOptions>) {
-    if (!el || !el.nodeType || el.nodeType !== 1) {
-      throw new Error('Sortable: `el` must be HTMLElement, not null or undefined');
-    }
-
-    this.el = el;
-    this.options = { ...Sortable.defaultOptions, ...options };
-    this.rootEl = el;
-
-    // Export instance
-    setInstance(el, this);
-
-    // Initialize animation state manager
-    this.animationManager = new AnimationStateManager(this);
-
-    // Bind all private methods
-    this.bindMethods();
-
-    // Setup drag mode
-    this.setupDragMode();
-
-    // Bind events
-    this.bindEvents();
-  }
-
   private static defaultOptions: ISortableOptions = {
     group: null,
     sort: true,
@@ -91,7 +37,6 @@ export class Sortable implements ISortable {
     dragoverBubble: false,
     dataIdAttr: 'data-id',
     delay: 0,
-    delayOnTouchOnly: false,
     touchStartThreshold: 1,
     forceFallback: false,
     fallbackClass: 'sortable-fallback',
@@ -102,74 +47,603 @@ export class Sortable implements ISortable {
     emptyInsertThreshold: 5,
   };
 
-  private bindMethods(): void {
-    // Define methods that need binding with proper type checking
-    const methodsToBind = ['_onDragStart', '_onDragOver', '_onDrop', '_onTapStart', '_onTouchMove', '_delayedDragTouchMoveHandler'] as const;
+  private readonly state: SortableState;
+  private readonly instanceId: symbol;
+  private readonly cleanupManager: CleanupManager;
+  private animationManager: AnimationStateManager;
+  private dragStartTimer?: number;
+  private normalizedGroup: ISortableGroup | null = null;
 
-    type MethodNames = (typeof methodsToBind)[number];
+  public options: ISortableOptions;
+  public el: HTMLElement;
 
-    methodsToBind.forEach((method: MethodNames) => {
-      const boundMethod = this[method];
-      if (typeof boundMethod === 'function') {
-        (this[method] as any) = boundMethod.bind(this);
+  constructor(el: HTMLElement, options?: Partial<ISortableOptions>) {
+    if (!el || !el.nodeType || el.nodeType !== 1) {
+      throw new Error('Sortable: `el` must be HTMLElement, not null or undefined');
+    }
+
+    this.instanceId = Symbol('SortableInstance');
+    this.cleanupManager = CleanupManager.getInstance();
+    this.el = el;
+    this.options = { ...Sortable.defaultOptions, ...options };
+    this.state = SortableState.getInstance();
+
+    // Initialize animation manager with cleanup
+    this.animationManager = new AnimationStateManager(this);
+    this.cleanupManager.registerAnimationCleanup(this.instanceId, () => {
+      this.animationManager.destroy();
+    });
+
+    // Register this instance in state
+    this.state.registerInstance(el, this);
+
+    // Initialize event listeners
+    this.initializeEventListeners();
+
+    // Prepare group options if specified
+    if (this.options.group) {
+      this.prepareGroup();
+    }
+  }
+
+  private initializeEventListeners(): void {
+    const verifyDragHandler: ISortableDOMEventListener = (evt: ISortableDOMEvents): void => {
+      this.verifyDrag(evt);
+    };
+
+    // Register main event listeners
+    if (this.options.supportPointer) {
+      this.cleanupManager.registerEventListener(this.instanceId, this.el, 'pointerdown', verifyDragHandler);
+    } else {
+      this.cleanupManager.registerEventListener(this.instanceId, this.el, 'mousedown', verifyDragHandler);
+      this.cleanupManager.registerEventListener(this.instanceId, this.el, 'touchstart', verifyDragHandler);
+    }
+
+    // Register scroll listeners if needed
+    const scrollEl = getScrollParent(this.el);
+    if (scrollEl && scrollEl !== document.documentElement && scrollEl !== document.scrollingElement) {
+      const scrollHandler: ISortableDOMEventListener = (evt: ISortableDOMEvents): void => {
+        this.onScroll(evt);
+      };
+
+      this.cleanupManager.registerEventListener(this.instanceId, scrollEl, 'scroll', scrollHandler);
+    }
+  }
+
+  // Helper method that calculates if elements should be swapped based on movement
+  private onMove = (dragRect: DOMRect, targetRect: DOMRect, direction: SortableDirection, sibling: HTMLElement | null): boolean => {
+    const options = this.options;
+    const threshold = options.swapThreshold || 1;
+    const invertSwap = options.invertSwap || false;
+    const invertedThreshold = options.invertedSwapThreshold || threshold;
+
+    const after = invertSwap ? !invertedThreshold : threshold > 0.5;
+    const dragState = this.state.getDragOperation();
+
+    if (direction === 'vertical') {
+      const dragCenter = dragRect.top + dragRect.height / 2;
+      const targetCenter = targetRect.top + targetRect.height / 2;
+      const isOverThreshold = after ? (dragCenter - targetCenter) / targetRect.height > threshold : (targetCenter - dragCenter) / targetRect.height > invertedThreshold;
+
+      if (isOverThreshold) {
+        return this.dispatchMoveEvent(sibling, dragState.sourceEl, after);
       }
+    } else {
+      const dragCenter = dragRect.left + dragRect.width / 2;
+      const targetCenter = targetRect.left + targetRect.width / 2;
+      const isOverThreshold = after ? (dragCenter - targetCenter) / targetRect.width > threshold : (targetCenter - dragCenter) / targetRect.width > invertedThreshold;
+
+      if (isOverThreshold) {
+        return this.dispatchMoveEvent(sibling, dragState.sourceEl, after);
+      }
+    }
+
+    return false;
+  };
+
+  private dispatchMoveEvent(target: HTMLElement | null, related: HTMLElement | null, willInsertAfter: boolean): boolean {
+    if (!target || !related) return false;
+
+    const moveEvent = new CustomEvent('sortable:move', {
+      bubbles: true,
+      cancelable: true,
+      detail: {
+        target,
+        related,
+        willInsertAfter,
+      },
+    });
+
+    this.el.dispatchEvent(moveEvent);
+    return !moveEvent.defaultPrevented;
+  }
+
+  // initial event handler: triggers when a user first interacts with a sortable element
+  private verifyDrag = (evt: ISortableDOMEvents): void => {
+    if (!evt.cancelable) return;
+
+    const target = this.state.getEventTarget(evt);
+    if (!target) return;
+
+    const validTarget = closest(target, this.getDraggableSelector(), this.el, false);
+    if (!validTarget) return;
+
+    // Get initial position from event
+    const coordinates = getEventCoordinates(evt);
+    if (!coordinates) return;
+
+    const { clientX, clientY } = coordinates;
+
+    // Start drag operation in state with initial position
+    this.state.startDrag(validTarget, clientX, clientY);
+
+    // Initialize drag position
+    const touch = getTouchFromEvent(evt);
+    if (touch) {
+      this.state.updateDragPosition(touch.clientX, touch.clientY);
+    }
+
+    this.initializeDragOperation(touch, validTarget);
+  };
+
+  private initDrag = () => {
+    const dragState = this.state.getDragOperation();
+    if (!dragState.sourceEl) return;
+
+    // Create preview
+    this.appendDraggingEl();
+
+    // Setup document listeners
+    const ownerDocument = this.el.ownerDocument;
+    if (this.options.supportPointer) {
+      this.cleanupManager.registerEventListener(this.instanceId, ownerDocument, 'pointermove', this.calculateDrag as EventListener);
+    } else {
+      this.cleanupManager.registerEventListener(this.instanceId, ownerDocument, 'mousemove', this.calculateDrag as EventListener);
+      this.cleanupManager.registerEventListener(this.instanceId, ownerDocument, 'touchmove', this.calculateDrag as EventListener);
+    }
+    this.cleanupManager.registerEventListener(this.instanceId, ownerDocument, 'dragover', this.onDragOver as EventListener);
+
+    // Update state and dispatch
+    this.state.updateDragElements({
+      dragEl: dragState.sourceEl,
+      oldIndex: Array.from(this.el.children).indexOf(dragState.sourceEl),
+    });
+    this.dispatchSortEvent('dragstart');
+  };
+
+  private initializeDragOperation(touch: Touch | PointerEvent | null, target: HTMLElement): void {
+    target.style.willChange = 'transform';
+    this.bindDragListeners(!!touch);
+
+    // Handle delay if needed
+    const delay = (this.options as ISortableOptions).delay;
+
+    if (this.shouldApplyDelay()) {
+      this.dragStartTimer = window.setTimeout(() => {
+        this.initDrag();
+        this.dragStartTimer = undefined;
+      }, delay);
+
+      // Register timer cleanup
+      this.cleanupManager.registerTimer(this.instanceId, this.dragStartTimer);
+    } else {
+      this.initDrag();
+    }
+  }
+
+  // Swap calculation logic: Tracks the dragging element
+  private calculateDrag = (evt: ISortableDOMEvents): void => {
+    const dragState = this.state.getDragOperation();
+    if (!dragState.active || !evt.cancelable) return;
+
+    const coordinates = getEventCoordinates(evt);
+    if (!coordinates) return;
+
+    const { clientX, clientY } = coordinates;
+
+    // Update position in state
+    this.state.updateDragPosition(clientX, clientY);
+
+    if (dragState.dragEl) {
+      evt.preventDefault();
+      this.emulateDragOver(evt);
+
+      // Update preview position
+      const mtx = matrix(dragState.dragEl) || { e: 0, f: 0 };
+      const dx = clientX - dragState.position.clientX;
+      const dy = clientY - dragState.position.clientY;
+
+      dragState.dragEl.style.transform = `translate3d(${dx + (mtx.e || 0)}px,${dy + (mtx.f || 0)}px,0)`;
+    } else if (!dragState.moved) {
+      const threshold = (this.options as ISortableOptions).touchStartThreshold || 1;
+      const moveDistance = Math.max(Math.abs(clientX - dragState.position.clientX), Math.abs(clientY - dragState.position.clientY));
+
+      if (moveDistance >= threshold) {
+        this.state.updateDragElements({ moved: true });
+        this.initDrag();
+      }
+    }
+  };
+
+  private onDragOver = (evt: ISortableDOMEvents): void => {
+    const dragState = this.state.getDragOperation();
+    if (!dragState.active || !dragState.sourceEl) return;
+
+    evt.preventDefault();
+    evt.stopPropagation();
+
+    let clientX: number;
+    let clientY: number;
+
+    // Extract coordinates based on event type
+    if (this.isTouchEvent(evt)) {
+      const touch = evt.touches[0];
+      if (!touch) return;
+      clientX = touch.clientX;
+      clientY = touch.clientY;
+    } else if (this.isDragEvent(evt)) {
+      clientX = evt.clientX;
+      clientY = evt.clientY;
+    } else {
+      // MouseEvent
+      clientX = evt.clientX;
+      clientY = evt.clientY;
+    }
+
+    const targetEl = document.elementFromPoint(clientX, clientY) as HTMLElement | null;
+    if (!targetEl) return;
+
+    const validTarget = closest(targetEl, this.getDraggableSelector(), this.el, false);
+    if (!validTarget || validTarget === dragState.sourceEl) return;
+
+    const rect = getRect(validTarget);
+    const direction = this.getDirection(evt, validTarget);
+
+    // Calculate previous and next siblings for potential swapping
+    const prevSibling = validTarget.previousElementSibling as HTMLElement | null;
+    const nextSibling = validTarget.nextElementSibling as HTMLElement | null;
+
+    // Calculate insertion point based on direction and position
+    const centerY = rect.top + rect.height / 2;
+    const centerX = rect.left + rect.width / 2;
+    const isVertical = direction === 'vertical';
+    const coordinate = isVertical ? clientY : clientX;
+    const center = isVertical ? centerY : centerX;
+
+    // Determine if we should insert before or after the target
+    const insertBefore = coordinate < center;
+    const sibling = insertBefore ? prevSibling : nextSibling;
+
+    // Get drag element rect for comparison
+    const dragRect = getRect(dragState.sourceEl);
+
+    // Check if we should move the element
+    if (this.onMove(dragRect, rect, direction, sibling)) {
+      // Capture the current state for animation
+      this.captureAnimationState();
+
+      // Insert the dragged element
+      if (insertBefore) {
+        validTarget.parentNode?.insertBefore(dragState.sourceEl, validTarget);
+      } else {
+        validTarget.parentNode?.insertBefore(dragState.sourceEl, validTarget.nextSibling);
+      }
+
+      // Add animation state for the moved target
+      this.addAnimationState({
+        target: validTarget,
+        rect: getRect(validTarget),
+      });
+
+      // Update drag state with new position
+      this.state.updateDragPosition(clientX, clientY);
+
+      // Dispatch sort event if needed
+      const oldIndex = dragState.oldIndex ?? -1;
+      const newIndex = Array.from(this.el.children).indexOf(dragState.sourceEl);
+
+      if (oldIndex !== newIndex) {
+        this.dispatchSortEvent('sort', {
+          oldIndex,
+          newIndex,
+          dragEl: dragState.sourceEl,
+          target: validTarget,
+        });
+      }
+
+      // Animate elements if animation duration is set
+      if ((this.options as ISortableOptions).animation) {
+        this.animateAll();
+      }
+    }
+  };
+
+  private onScroll = (evt: ISortableDOMEvents): void => {
+    const dragState = this.state.getDragOperation();
+    if (!dragState.active || !dragState.dragEl) return;
+
+    // Get scroll coordinates
+    const { scrollTop, scrollLeft } = evt.target as HTMLElement;
+
+    // Update drag element position based on scroll
+    const mtx = matrix(dragState.dragEl) || { e: 0, f: 0 };
+    const dx = dragState.position.clientX - dragState.position.initialX;
+    const dy = dragState.position.clientY - dragState.position.initialY;
+
+    dragState.dragEl.style.transform = `translate3d(${dx + (mtx.e || 0)}px,${dy + (mtx.f || 0)}px,0)`;
+
+    // Update scroll position in state
+    this.state.updateScrollPosition(scrollTop, scrollLeft);
+  };
+
+  private emulateDragOver = (evt: ISortableDOMEvents): void => {
+    // 1. Validate drag state
+    const dragState = this.state.getDragOperation();
+    if (!dragState.active || !dragState.dragEl) return;
+
+    // 2. Get coordinates from event
+    const coordinates = getEventCoordinates(evt);
+    if (!coordinates) return;
+
+    const { clientX, clientY } = coordinates;
+
+    // 3. Handle drag preview visibility
+    this.toggleDraggingElVisibility(false);
+
+    // 4. Find target element at point
+    const targetAtPoint = document.elementFromPoint(clientX, clientY);
+    if (!targetAtPoint || !(targetAtPoint instanceof HTMLElement)) {
+      this.toggleDraggingElVisibility(true);
+      return;
+    }
+
+    // 5. Show drag preview
+    this.toggleDraggingElVisibility(true);
+
+    // 6. Handle dragging outside current sortable
+    if (this.isOutsideThisEl(targetAtPoint)) {
+      const targetSortable = this.getSortableParent(targetAtPoint);
+      if (targetSortable && targetSortable !== this) {
+        targetSortable.handleDragOver(evt);
+        return;
+      }
+    }
+
+    // 7. Get valid drag target
+    const validTarget = closest(targetAtPoint, this.getDraggableSelector(), this.el, false);
+    if (!validTarget || validTarget === dragState.sourceEl) return;
+
+    // 8. Calculate rects and direction
+    const dragRect = getRect(dragState.dragEl);
+    const targetRect = getRect(validTarget);
+    const direction = this.getDirection(evt, validTarget);
+
+    // 9. Determine sibling based on direction
+    const sibling = this.getTargetSibling(validTarget, direction);
+
+    // 10. Check if move is valid and perform animation
+    if (this.onMove(dragRect, targetRect, direction, sibling)) {
+      this.captureAnimationState();
+      this._animate(validTarget);
+      this.addAnimationState({
+        target: validTarget,
+        rect: getRect(validTarget),
+      });
+    }
+  };
+
+  private onDrop = (evt: Event): void => {
+    if (evt) {
+      evt.preventDefault();
+    }
+
+    const dragState = this.state.getDragOperation();
+    if (!dragState.active || !dragState.dragEl) return;
+
+    // Remove preview
+    if (dragState.dragEl.parentNode) {
+      dragState.dragEl.parentNode.removeChild(dragState.dragEl);
+    }
+
+    // Reset styles
+    const draggingClass = (this.options as ISortableOptions).draggingClass || 'sortable-dragging';
+    const fallbackClass = (this.options as ISortableOptions).fallbackClass || 'sortable-fallback';
+
+    if (dragState.sourceEl) {
+      toggleClass(dragState.sourceEl, draggingClass, false);
+      toggleClass(dragState.sourceEl, fallbackClass, false);
+    }
+
+    // Dispatch drop event
+    this.dispatchSortEvent('drop');
+
+    // Reset state
+    this.state.endDrag();
+  };
+
+  // Helper method to determine target sibling
+  private getTargetSibling(target: HTMLElement, direction: SortableDirection): HTMLElement | null {
+    return direction === 'vertical' ? (target.nextElementSibling as HTMLElement | null) : (target.previousElementSibling as HTMLElement | null);
+  }
+
+  private getSortableParent = (el: HTMLElement): ISortable | null => {
+    let current: HTMLElement | null = el;
+
+    while (current && current !== document.body) {
+      const instance = this.state.getInstance(current);
+      if (instance) return instance;
+      current = current.parentElement;
+    }
+
+    return null;
+  };
+
+  private toggleDraggingElVisibility(show: boolean): void {
+    const dragState = this.state.getDragOperation();
+    if (dragState.dragEl) {
+      css(dragState.dragEl, 'display', show ? '' : 'none');
+    }
+  }
+
+  private appendDraggingEl(): void {
+    const dragState: Readonly<DragState> = this.state.getDragOperation();
+    if (!dragState.sourceEl) return;
+
+    // Early container resolution
+    const container: HTMLElement = (this.options as ISortableOptions).fallbackOnBody ? document.body : this.el;
+    const scrollParent: HTMLElement | null = getScrollParent(this.el);
+    const isAbsolutePositioning: boolean = (scrollParent && scrollParent !== document.body) ?? false;
+
+    // Get initial rect with proper parameters
+    const rect: DOMRect = getRect(dragState.sourceEl, true, (this.options as ISortableOptions).fallbackOnBody, true, container);
+
+    // Create drag element with all properties
+    const dragEl: HTMLElement = this.createDragElement(dragState.sourceEl, rect);
+
+    // Position the element
+    this.positionDragElement(dragEl, rect, isAbsolutePositioning, scrollParent);
+
+    // Append and update state
+    container.appendChild(dragEl);
+    this.state.updateDragElements({ dragEl });
+  }
+
+  private createDragElement(sourceEl: HTMLElement, rect: DOMRect): HTMLElement {
+    const dragEl: HTMLElement = sourceEl.cloneNode(true) as HTMLElement;
+    const { draggingClass = 'sortable-dragging', fallbackClass = 'sortable-fallback' } = this.options;
+
+    // Add classes
+    toggleClass(dragEl, fallbackClass, true);
+    toggleClass(dragEl, draggingClass, true);
+
+    // Apply base styles
+    const baseStyles: Record<string, string> = {
+      position: 'fixed',
+      zIndex: '100000',
+      pointerEvents: 'none',
+      width: `${rect.width}px`,
+      height: `${rect.height}px`,
+      boxSizing: 'border-box',
+      margin: '0',
+      opacity: '0.8',
+      transition: '',
+      transform: '',
+    };
+
+    css(dragEl, baseStyles);
+    return dragEl;
+  }
+
+  private positionDragElement(dragEl: HTMLElement, rect: DOMRect, isAbsolutePositioning: boolean, scrollParent: HTMLElement | null): void {
+    if (!isAbsolutePositioning) {
+      css(dragEl, {
+        top: `${rect.top}px`,
+        left: `${rect.left}px`,
+      });
+      return;
+    }
+
+    // Handle scroll parent positioning
+    const scrollParentRect: DOMRect = getRect(scrollParent!);
+    const scroll: { scrollTop: number; scrollLeft: number } = getScroll(scrollParent!);
+
+    css(dragEl, {
+      position: 'absolute',
+      top: `${rect.top - scrollParentRect.top + scroll.scrollTop}px`,
+      left: `${rect.left - scrollParentRect.left + scroll.scrollLeft}px`,
     });
   }
 
-  private setupDragMode(): void {
-    // Implementation
+  // Type guards for event types
+  private isTouchEvent(evt: Event): evt is TouchEvent {
+    return 'touches' in evt;
   }
 
-  private bindEvents(): void {
-    const el = this.el;
-    const options = this.options;
+  private isDragEvent(evt: Event): evt is DragEvent {
+    return 'dataTransfer' in evt;
+  }
 
-    if (options.supportPointer) {
-      on(el, 'pointerdown', this._onTapStart);
+  private shouldApplyDelay(): boolean {
+    return !!(this.options.delay && this.options.delay > 0);
+  }
+
+  private bindDragListeners(isTouch: boolean): void {
+    const doc = this.el.ownerDocument;
+
+    if ((this.options as ISortableOptions).supportPointer) {
+      this.cleanupManager.registerEventListener(this.instanceId, doc, 'pointermove', this.calculateDrag as EventListener);
+      this.cleanupManager.registerEventListener(this.instanceId, doc, 'pointerup', this.onDrop as EventListener);
+      this.cleanupManager.registerEventListener(this.instanceId, doc, 'pointercancel', this.onDrop as EventListener);
     } else {
-      on(el, 'mousedown', this._onTapStart);
-      on(el, 'touchstart', this._onTapStart);
+      this.cleanupManager.registerEventListener(this.instanceId, doc, isTouch ? 'touchmove' : 'mousemove', this.calculateDrag as EventListener);
+      this.cleanupManager.registerEventListener(this.instanceId, doc, isTouch ? 'touchend' : 'mouseup', this.onDrop as EventListener);
+      if (isTouch) {
+        this.cleanupManager.registerEventListener(this.instanceId, doc, 'touchcancel', this.onDrop as EventListener);
+      }
     }
+  }
+
+  private _animate(target: HTMLElement): void {
+    const dragState = this.state.getDragOperation();
+    if (!dragState.sourceEl) return;
+
+    const oldIndex = Array.from(this.el.children).indexOf(dragState.sourceEl);
+    const newIndex = Array.from(this.el.children).indexOf(target);
+
+    if (oldIndex !== newIndex) {
+      this.el.insertBefore(dragState.sourceEl, target);
+      this.dispatchSortEvent('sort', {
+        oldIndex,
+        newIndex,
+        dragEl: dragState.sourceEl,
+        target,
+      });
+    }
+  }
+
+  private dispatchSortEvent(name: string, detail: Record<string, any> = {}): void {
+    const evt = new CustomEvent(name, {
+      bubbles: true,
+      cancelable: true,
+      detail: {
+        ...detail,
+        from: this.el,
+      },
+    });
+
+    this.el.dispatchEvent(evt);
+  }
+
+  private getDirection(evt: Event, target: HTMLElement): SortableDirection {
+    const direction = this.options.direction;
+    if (typeof direction === 'function') {
+      return direction.call(this, evt, target, this.state.getDragOperation().sourceEl);
+    }
+    return direction || 'vertical';
+  }
+
+  private isOutsideThisEl(target: HTMLElement | null): boolean {
+    return !target || (!this.el.contains(target) && target !== this.el);
   }
 
   public destroy(): void {
-    // Remove event listeners
-    off(this.el, 'dragstart', this._onDragStart);
-    off(this.el, 'dragover', this._onDragOver);
-    off(this.el, 'dragenter', this._onDragOver);
-
-    off(this.el, 'drop', this._onDrop);
-    off(this.el, 'dragend', this._onDrop);
-
-    this._onDrop();
-
-    // Clear references from the store
-    removeInstance(this.el);
-
-    // Clear other references without nulling el and rootEl
-    this.activeEl = null;
-    this.parentEl = null;
-    this.draggingEl = null;
-    this.cloneEl = null;
-    this.nextEl = null;
+    this.state.destroyInstance(this.instanceId);
   }
 
   public option<K extends keyof ISortableOptions>(name: K, value?: ISortableOptions[K]): ISortableOptions[K] {
-    let options = this.options;
-
     if (value === undefined) {
-      return options[name];
-    } else {
-      options[name] = value;
-      if (name === 'group') {
-        this._prepareGroup();
-      }
-      return value;
+      return this.options[name];
     }
+
+    this.options[name] = value;
+    if (name === 'group') {
+      this.prepareGroup();
+    }
+    return value;
   }
 
   public toArray(): string[] {
-    return getElementsArray(this.el, this.getDraggableSelector(), this.options.dataIdAttr ?? 'data-id');
+    return getElementsArray(this.el, this.getDraggableSelector(), (this.options as ISortableOptions).dataIdAttr || 'data-id');
   }
 
   public sort(order: string[], useAnimation?: boolean): void {
@@ -195,11 +669,13 @@ export class Sortable implements ISortable {
     useAnimation && this.animateAll();
   }
 
+  // unused so far
   public save(): void {
-    const store = this.options.store;
+    const store = (this.options as ISortableOptions).store;
     store?.set?.(this);
   }
 
+  // Animation Methods
   public captureAnimationState(): void {
     this.animationManager.captureAnimationState();
   }
@@ -220,340 +696,18 @@ export class Sortable implements ISortable {
     this.animationManager.animate(target, currentRect, toRect, duration);
   }
 
-  private _onTapStart(evt: MouseEvent | TouchEvent | PointerEvent): void {
-    if (!evt.cancelable) return;
-
-    const { el } = this;
-    let { target } = evt;
-
-    if (target && (target as HTMLElement)?.shadowRoot) {
-      let touchPoint: { clientX: number; clientY: number };
-
-      if ('touches' in evt && evt.touches[0]) {
-        touchPoint = evt.touches[0];
-      } else if ('pointerType' in evt && evt.pointerType === 'touch') {
-        touchPoint = evt;
-      } else {
-        touchPoint = evt as MouseEvent;
-      }
-
-      const shadowTarget = (target as HTMLElement)?.shadowRoot?.elementFromPoint(touchPoint.clientX, touchPoint.clientY);
-      if (shadowTarget) {
-        target = shadowTarget;
-      }
-    }
-
-    if (!target) return;
-
-    const validTarget = closest(target as HTMLElement, this.getDraggableSelector(), el, false);
-    if (!validTarget) return;
-
-    let touch: Touch | PointerEvent | null;
-    if ('touches' in evt && evt.touches[0]) {
-      touch = evt.touches[0];
-    } else if ('pointerType' in evt && evt.pointerType === 'touch') {
-      touch = evt;
-    } else {
-      touch = null;
-    }
-
-    this._prepareDragStart(evt, touch, validTarget as HTMLElement);
+  public handleDragOver(evt: ISortableDOMEvents): void {
+    this.onDragOver(evt);
   }
 
-  private _prepareDragStart(evt: Event, touch: Touch | PointerEvent | null, target: HTMLElement): void {
-    if (!target || !this.el) return;
-
-    const dragRect = getRect(target);
-    this.activeEl = target;
-    this.parentEl = target.parentNode as HTMLElement;
-    this.nextEl = target.nextElementSibling as HTMLElement;
-
-    const options = this.options;
-    const ownerDocument = this.el.ownerDocument;
-
-    this._lastX = (touch || (evt as MouseEvent)).clientX;
-    this._lastY = (touch || (evt as MouseEvent)).clientY;
-
-    target.style.willChange = 'all';
-
-    // Setup event handlers
-    const touchMoveHandler = ((e: Event) => {
-      this._onTouchMove(e as MouseEvent | TouchEvent | PointerEvent);
-    }) as EventListener;
-
-    const dropHandler = ((e: Event) => {
-      this._onDrop(e);
-    }) as EventListener;
-
-    // Bind events
-    if (options.supportPointer) {
-      on(ownerDocument, 'pointermove', touchMoveHandler);
-      on(ownerDocument, 'pointerup', dropHandler);
-      on(ownerDocument, 'pointercancel', dropHandler);
-    } else {
-      on(ownerDocument, touch ? 'touchmove' : 'mousemove', touchMoveHandler);
-      on(ownerDocument, touch ? 'touchend' : 'mouseup', dropHandler);
-      if (touch) {
-        on(ownerDocument, 'touchcancel', dropHandler);
-      }
-    }
-
-    // Handle delay
-    if (options.delay && (!options.delayOnTouchOnly || touch)) {
-      this.dragStartTimer = window.setTimeout(() => {
-        this._dragStarted();
-      }, options.delay);
-
-      // Bind delayed drag movement detection
-      if (options.supportPointer) {
-        on(ownerDocument, 'pointermove', this._delayedDragTouchMoveHandler);
-      } else {
-        on(ownerDocument, 'mousemove', this._delayedDragTouchMoveHandler);
-        on(ownerDocument, 'touchmove', this._delayedDragTouchMoveHandler);
-      }
-    } else {
-      this._dragStarted();
-    }
-
-    // Disable native drag
-    if (target) {
-      target.draggable = false;
-    }
+  private getDraggableSelector(): string {
+    return (this.options as ISortableOptions).draggable;
   }
 
-  private _onTouchMove(evt: MouseEvent | TouchEvent | PointerEvent): void {
-    if (!this.activeEl || !evt.cancelable) return;
-
-    let touch: { clientX: number; clientY: number };
-
-    if ('touches' in evt && evt.touches[0]) {
-      touch = evt.touches[0];
-    } else if ('pointerType' in evt && evt.pointerType === 'touch') {
-      touch = evt;
-    } else {
-      touch = evt as MouseEvent;
-    }
-
-    const options = this.options;
-
-    if (this.draggingEl) {
-      const dx = touch.clientX - this._lastX;
-      const dy = touch.clientY - this._lastY;
-
-      evt.preventDefault();
-      this._emulateDragOver(evt);
-
-      // Update preview position
-      if (this.draggingEl) {
-        const mtx = this.draggingEl.style.transform ? matrix(this.draggingEl) : { e: 0, f: 0 };
-
-        this.draggingEl.style.transform = `translate3d(${dx + (mtx?.e || 0)}px,${dy + (mtx?.f || 0)}px,0)`;
-      }
-    } else if (!this.moved) {
-      const threshold = options.touchStartThreshold || 1;
-      const moveDistance = Math.max(Math.abs(touch.clientX - this._lastX), Math.abs(touch.clientY - this._lastY));
-
-      if (moveDistance >= threshold) {
-        this.moved = true;
-        this._dragStarted();
-      }
-    }
-
-    this._lastX = touch.clientX;
-    this._lastY = touch.clientY;
-  }
-
-  private _onDragStart(evt: Event): void {
-    if (!this.activeEl) return;
-
-    const options = this.options;
-    const dataTransfer = (evt as DragEvent).dataTransfer;
-
-    // Set data
-    if (dataTransfer) {
-      dataTransfer.effectAllowed = 'move';
-      options.setData?.(dataTransfer, this.activeEl);
-    }
-
-    // Create preview
-    this._createPreview();
-
-    // Add preview class
-    const draggingClass = this.options.draggingClass || 'sortable-dragging';
-    const fallbackClass = this.options.fallbackClass || 'sortable-fallback';
-    if (this.activeEl) {
-      toggleClass(this.activeEl, draggingClass, true);
-    }
-
-    Sortable.active = this;
-    Sortable.draggedEl = this.activeEl;
-  }
-
-  private _createPreview(): void {
-    if (!this.activeEl) return;
-
-    const previewEl = this.activeEl.cloneNode(true) as HTMLElement;
-    const draggingClass = this.options.draggingClass || 'sortable-dragging';
-    const fallbackClass = this.options.fallbackClass || 'sortable-fallback';
-    previewEl.classList.remove(draggingClass);
-    previewEl.classList.add(fallbackClass);
-    const rect = getRect(this.activeEl);
-    css(previewEl, {
-      transition: '',
-      transform: '',
-      boxSizing: 'border-box',
-      margin: '0',
-      top: `${rect.top}px`,
-      left: `${rect.left}px`,
-      width: `${rect.width}px`,
-      height: `${rect.height}px`,
-      opacity: '0.8',
-      position: 'fixed',
-      zIndex: '100000',
-      pointerEvents: 'none',
-      display: '',
-    });
-
-    this.draggingEl = previewEl;
-    document.body.appendChild(previewEl);
-  }
-
-  private _emulateDragOver(evt: Event): void {
-    if (!this.activeEl || !this.draggingEl) return;
-
-    const touch = (evt as TouchEvent).touches?.[0] || evt;
-    const target = document.elementFromPoint(touch.clientX, touch.clientY) as HTMLElement;
-
-    if (target) {
-      const sortable = this._getSortableParent(target);
-      if (sortable && sortable !== this) {
-        this._onDragOver(evt);
-      }
-    }
-  }
-
-  private _getSortableParent(el: HTMLElement): ISortable | null {
-    let currentEl: HTMLElement | null = el;
-
-    while (currentEl && currentEl !== document.body) {
-      const instance = getInstance(currentEl);
-      if (instance) return instance;
-      currentEl = currentEl.parentElement;
-    }
-
-    return null;
-  }
-
-  private _onDragOver(evt: Event): void {
-    if (!this.activeEl) return;
-
-    evt.preventDefault();
-    evt.stopPropagation();
-
-    const target = (evt as DragEvent).target as HTMLElement;
-    const dragRect = getRect(this.activeEl);
-    const targetRect = getRect(target);
-
-    const direction = this._getDirection(evt, target);
-    const sibling = direction === 'vertical' ? target.nextElementSibling : target.previousElementSibling;
-
-    if (this._onMove(dragRect, targetRect, direction, sibling as HTMLElement)) {
-      this._animate(target);
-    }
-  }
-
-  private _onMove(dragRect: DOMRect, targetRect: DOMRect, direction: string, sibling: HTMLElement): boolean {
-    const options = this.options;
-
-    if (direction === 'vertical') {
-      if (dragRect.top < targetRect.top) {
-        return true;
-      }
-    } else {
-      if (dragRect.left < targetRect.left) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  private _animate(target: HTMLElement): void {
-    if (!this.activeEl) return; // Early return if activeEl is null
-
-    const oldIndex = Array.from(this.el.children).indexOf(this.activeEl);
-    const newIndex = Array.from(this.el.children).indexOf(target);
-
-    if (oldIndex !== newIndex) {
-      this.el.insertBefore(this.activeEl, target);
-      this._dispatchSortEvent('sort', { oldIndex, newIndex });
-    }
-  }
-
-  private _onDrop(evt?: Event): void {
-    if (evt) {
-      evt.preventDefault();
-    }
-
-    if (this.activeEl && this.draggingEl) {
-      // Remove preview
-      this.draggingEl.parentNode?.removeChild(this.draggingEl);
-
-      // Reset activeEl styles
-      const draggingClass = this.options.draggingClass || 'sortable-dragging';
-      const fallbackClass = this.options.fallbackClass || 'sortable-fallback';
-      if (this.activeEl) {
-        toggleClass(this.activeEl, draggingClass, false);
-        toggleClass(this.activeEl, fallbackClass, false);
-      }
-
-      // Dispatch drop event
-      this._dispatchSortEvent('drop');
-
-      // Reset state
-      this._nulling();
-    }
-  }
-
-  private _nulling(): void {
-    // Reset all state
-    this.activeEl = null;
-    this.draggingEl = null;
-    this.parentEl = null;
-    this.nextEl = null;
-    this.cloneEl = null;
-
-    this.oldIndex = null;
-    this.newIndex = null;
-
-    this.moved = false;
-    this.awaitingDragStarted = false;
-
-    Sortable.active = null;
-    Sortable.draggedEl = null;
-    Sortable.previewEl = null;
-  }
-
-  private _dispatchSortEvent(name: string, detail: any = {}): void {
-    const evt = new CustomEvent(name, {
-      bubbles: true,
-      cancelable: true,
-      detail: {
-        ...detail,
-        oldIndex: this.oldIndex,
-        newIndex: this.newIndex,
-        from: this.el,
-      },
-    });
-
-    this.el.dispatchEvent(evt);
-  }
-
-  private _prepareGroup(): void {
+  private prepareGroup(): void {
     const options = this.options;
 
     if (!options.group) {
-      // Create default group options
       options.group = {
         name: undefined,
         pull: true,
@@ -562,196 +716,43 @@ export class Sortable implements ISortable {
       };
     }
 
-    // Convert string to object format
     if (typeof options.group === 'string') {
       options.group = { name: options.group };
     }
 
-    // At this point options.group is an object
     const group = options.group as {
       name?: string;
-      pull?: boolean | 'clone' | ((to: ISortable, from: ISortable, activeEl: HTMLElement, event: Event) => boolean);
-      put?: boolean | string[] | ((to: ISortable, from: ISortable, activeEl: HTMLElement, event: Event) => boolean);
+      pull?: boolean | 'clone' | ((to: ISortable, from: ISortable, dragEl: HTMLElement, event: Event) => boolean);
+      put?: boolean | string[] | ((to: ISortable, from: ISortable, dragEl: HTMLElement, event: Event) => boolean);
       revertClone?: boolean;
     };
 
-    // Create normalized internal group
-    this._normalizedGroup = {
+    this.normalizedGroup = {
       name: group.name ?? null,
-      checkPull: (to: ISortable, from: ISortable, activeEl: HTMLElement, evt: Event): boolean | 'clone' => {
+      checkPull: (to: ISortable, from: ISortable, dragEl: HTMLElement, evt: Event): boolean | 'clone' => {
         if (!group.pull) return false;
-
         if (typeof group.pull === 'function') {
-          return group.pull(to, from, activeEl, evt);
+          return group.pull(to, from, dragEl, evt);
         }
         return group.pull;
       },
-      checkPut: (to: ISortable, from: ISortable, activeEl: HTMLElement, evt: Event): boolean => {
+      checkPut: (to: ISortable, from: ISortable, dragEl: HTMLElement, evt: Event): boolean => {
         if (!group.put) return false;
-
         if (Array.isArray(group.put)) {
-          const fromGroup = (from as Sortable)._normalizedGroup;
+          const fromGroup = (from as Sortable).normalizedGroup;
           return group.put.includes(fromGroup?.name ?? '');
         }
         if (typeof group.put === 'function') {
-          return group.put(to, from, activeEl, evt);
+          return group.put(to, from, dragEl, evt);
         }
         return !!group.put;
       },
       revertClone: group.revertClone ?? false,
     };
-  }
 
-  private _toFn(value: any, pull: boolean): (to: ISortable, from: ISortable, activeEl: HTMLElement, evt: Event) => boolean | 'clone' {
-    return (to: ISortable, from: ISortable, activeEl: HTMLElement, evt: Event): boolean | 'clone' => {
-      const toGroup = (to as Sortable)._normalizedGroup;
-      const fromGroup = (from as Sortable)._normalizedGroup;
-      const sameGroup = toGroup?.name && fromGroup?.name && toGroup.name === fromGroup.name;
-
-      // Handle default cases
-      if (value == null) {
-        return !!(pull || sameGroup);
-      }
-
-      if (value === false) {
-        return false;
-      }
-
-      if (pull && value === 'clone') {
-        return 'clone';
-      }
-
-      // Handle function case
-      if (typeof value === 'function') {
-        return this._toFn(value(to, from, activeEl, evt), pull)(to, from, activeEl, evt);
-      }
-
-      // Handle string/array case
-      const otherGroup = (pull ? toGroup : fromGroup)?.name ?? '';
-
-      return !!(value === true || (typeof value === 'string' && value === otherGroup) || (Array.isArray(value) && value.includes(otherGroup)));
-    };
-  }
-
-  private _getDirection(evt: Event, target: HTMLElement): SortableDirection {
-    const directionOption = this.options.direction || 'vertical';
-
-    if (typeof directionOption === 'function') {
-      return directionOption.call(this, evt, target, this.activeEl);
-    }
-
-    return directionOption;
-  }
-
-  private _hideDraggingEl(): void {
-    if (this.draggingEl) {
-      css(this.draggingEl, 'display', 'none');
-    }
-  }
-
-  private _showDraggingEl(): void {
-    if (this.draggingEl) {
-      css(this.draggingEl, 'display', '');
-    }
-  }
-
-  private _appendDraggingEl(): void {
-    if (!this.activeEl) return;
-
-    const container = this.options.fallbackOnBody ? document.body : this.rootEl;
-    const rect = getRect(this.activeEl, true, this.options.fallbackOnBody, true, container);
-
-    this.draggingEl = this.activeEl.cloneNode(true) as HTMLElement;
-    const draggingClass = this.options.draggingClass || 'sortable-dragging';
-    const fallbackClass = this.options.fallbackClass || 'sortable-fallback';
-    if (this.draggingEl) {
-      toggleClass(this.draggingEl, fallbackClass, true);
-      toggleClass(this.draggingEl, draggingClass, true);
-    }
-
-    css(this.draggingEl, {
-      transition: '',
-      transform: '',
-      boxSizing: 'border-box',
-      margin: '0',
-      top: `${rect.top}px`,
-      left: `${rect.left}px`,
-      width: `${rect.width}px`,
-      height: `${rect.height}px`,
-      opacity: '0.8',
-      position: 'fixed',
-      zIndex: '100000',
-      pointerEvents: 'none',
-      display: '',
+    // Register group cleanup
+    this.cleanupManager.registerCustomCleanup(this.instanceId, () => {
+      this.normalizedGroup = null;
     });
-
-    container.appendChild(this.draggingEl);
-  }
-
-  private _dragStarted(): void {
-    if (!this.activeEl || !this.draggingEl) return;
-    this.awaitingDragStarted = false;
-    const draggingClass = this.options.draggingClass || 'sortable-dragging';
-    if (this.activeEl) {
-      toggleClass(this.activeEl, draggingClass, true);
-    }
-    Sortable.active = this;
-    Sortable.draggedEl = this.activeEl;
-    this._dispatchSortEvent('start');
-  }
-
-  private _delayedDragTouchMoveHandler: EventListener = ((e: Event): void => {
-    const touch = (e as TouchEvent).touches?.[0] || (e as PointerEvent);
-    if (!touch) return;
-
-    const threshold = this.options.touchStartThreshold || 1;
-    const deltaX = Math.abs(touch.clientX - this._lastX);
-    const deltaY = Math.abs(touch.clientY - this._lastY);
-
-    if (Math.max(deltaX, deltaY) >= threshold) {
-      this._disableDelayedDrag();
-    }
-  }).bind(this);
-
-  private _disableDelayedDrag(): void {
-    if (!this.activeEl) return;
-
-    css(this.activeEl, 'transform', '');
-    clearTimeout(this.dragStartTimer);
-    this._disableDelayedDragEvents();
-    this._nulling(); // Reset state when drag is disabled
-  }
-
-  private _disableDelayedDragEvents(): void {
-    const ownerDocument = this.el.ownerDocument;
-    off(ownerDocument, 'mousemove', this._delayedDragTouchMoveHandler);
-    off(ownerDocument, 'touchmove', this._delayedDragTouchMoveHandler);
-    off(ownerDocument, 'pointermove', this._delayedDragTouchMoveHandler);
-  }
-
-  private _offMoveEvents(): void {
-    off(document, 'mousemove', this._onTouchMove);
-    off(document, 'touchmove', this._onTouchMove);
-    off(document, 'pointermove', this._onTouchMove);
-    off(document, 'dragover', this._onDragOver);
-  }
-
-  private _offUpEvents(): void {
-    const ownerDocument = this.el.ownerDocument;
-    off(ownerDocument, 'mouseup', this._onDrop.bind(this));
-    off(ownerDocument, 'touchend', this._onDrop.bind(this));
-    off(ownerDocument, 'touchcancel', this._onDrop.bind(this));
-    off(ownerDocument, 'selectstart', this._onDrop.bind(this));
-    off(document, 'selectstart', this._onDrop.bind(this));
-  }
-
-  private _isOutsideThisEl(target: HTMLElement): boolean {
-    return !this.el.contains(target) && target !== this.el;
-  }
-
-  private _ignoreWhileAnimating = null;
-
-  private getDraggableSelector(): string {
-    return this.options.draggable;
   }
 }

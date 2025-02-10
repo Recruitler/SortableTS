@@ -1,3 +1,11 @@
+/**
+ * Common interface for coordinates across different event types
+ */
+export interface ICoordinates {
+  clientX: number;
+  clientY: number;
+}
+
 // https://stackoverflow.com/a/56458070/1440240
 
 export interface CSSMatrix {
@@ -39,4 +47,4 @@ declare global {
 }
 
 // This empty export makes this file a module
-export {}
+export {};

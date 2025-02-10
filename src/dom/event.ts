@@ -1,46 +1,98 @@
-import { ISortable, ISortableOptions } from '@core/sortable.interfaces';
-import { getInstance } from '@core/store';
+import { ISortable, ISortableOptions, IGroupOptions } from '@core/sortable.interfaces';
 import { IEventProps } from '@dom/event.interfaces';
-import { dispatch } from '@dom/events.utils';
 
-export { off, on } from '@dom/events.utils';
+/**
+ * Dispatches a custom event with type-safe detail
+ */
+function dispatch<T extends object>(el: HTMLElement, eventName: string, detail?: T): boolean {
+  const event = new CustomEvent<T>(eventName, {
+    bubbles: true,
+    cancelable: true,
+    detail,
+  });
+  return el.dispatchEvent(event);
+}
 
-export const dispatchSortableEvent = ({ sortable, rootEl, name, targetEl, cloneEl, toEl, fromEl, oldIndex, newIndex, oldDraggableIndex, newDraggableIndex, originalEvent, putSortable, extraEventProperties = {} }: IEventProps): void => {
-  const instance = sortable || getInstance(rootEl);
-  if (!instance) {
-    throw new Error('No Sortable instance found');
+type EventDetail = {
+  to: HTMLElement;
+  from: HTMLElement;
+  item: HTMLElement;
+  clone: HTMLElement | null;
+  oldIndex: number | null;
+  newIndex: number | null;
+  oldDraggableIndex: number | null;
+  newDraggableIndex: number | null;
+  originalEvent: Event | null;
+  pullMode: 'clone' | boolean | undefined;
+  [key: string]: any; // For extra properties
+};
+
+type SortableEventHandler = (this: ISortable, event: EventDetail) => void;
+
+/**
+ * Dispatches a sortable event and calls the corresponding event handler if defined
+ * @param props - Event properties including sortable instance, elements, and indices
+ */
+export const dispatchSortableEvent = ({
+  sortable,
+  rootEl,
+  name,
+  targetEl,
+  cloneEl,
+  toEl,
+  fromEl,
+  oldIndex,
+  newIndex,
+  oldDraggableIndex,
+  newDraggableIndex,
+  originalEvent,
+  putSortable,
+  extraEventProperties = {} as Record<string, any>
+}: IEventProps): void => {
+  if (!sortable) {
+    throw new Error('Sortable instance is required');
   }
 
-  if (!sortable) return;
-
-  const eventDetail = {
+  const eventDetail: EventDetail = {
     to: toEl || rootEl || sortable.el,
     from: fromEl || rootEl || sortable.el,
     item: targetEl || rootEl || sortable.el,
-    clone: cloneEl as HTMLElement,
+    clone: cloneEl || null,
     oldIndex: oldIndex ?? null,
     newIndex: newIndex ?? null,
     oldDraggableIndex: oldDraggableIndex ?? null,
     newDraggableIndex: newDraggableIndex ?? null,
-    originalEvent: originalEvent as Event,
+    originalEvent: originalEvent || null,
     pullMode: getPullMode(putSortable),
-    ...extraEventProperties,
+    ...extraEventProperties
   };
 
+  // Dispatch DOM event
   dispatch(sortable.el, name, eventDetail);
 
-  const options: ISortableOptions = sortable.options;
-  const eventHandlerName = `on${name.charAt(0).toUpperCase()}${name.substr(1)}` as keyof ISortableOptions;
-  const eventHandler = options[eventHandlerName];
+  // Call event handler if defined
+  const eventHandlerName = `on${name.charAt(0).toUpperCase()}${name.slice(1)}` as keyof ISortableOptions;
+  const eventHandler: SortableEventHandler | undefined = sortable.options[eventHandlerName] as SortableEventHandler;
+  
   if (typeof eventHandler === 'function') {
-    (eventHandler as (this: ISortable, event: typeof eventDetail) => void).call(sortable, eventDetail);
+    eventHandler.call(sortable, eventDetail);
   }
 };
 
+/**
+ * Gets the pull mode from a sortable instance's group options
+ * @param putSortable - The sortable instance to get pull mode from
+ * @returns The pull mode ('clone', true, false, or undefined)
+ */
 function getPullMode(putSortable?: ISortable): 'clone' | boolean | undefined {
-  if (!putSortable) return undefined;
+  if (!putSortable?.options?.group) {
+    return undefined;
+  }
 
-  const group = putSortable.options?.group;
-  const pull = typeof group === 'object' ? group?.pull : undefined;
-  return typeof pull === 'function' ? true : pull;
+  const group = putSortable.options.group as IGroupOptions;
+  if (typeof group === 'string' || group === null) {
+    return undefined;
+  }
+
+  return typeof group.pull === 'function' ? true : group.pull;
 }

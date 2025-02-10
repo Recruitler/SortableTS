@@ -1,11 +1,11 @@
+// Core exports
 export { Sortable } from '@core/sortable';
-export { type ISortableEvent as DragEvent, type IRect as Position, type ISortableEvent as SortableEvents, type ISortableOptions as SortableOptions } from '@core/sortable.interfaces';
+export { type IGroupOptions, type IRect, type ISortableEvent, type ISortableMoveEvent, type ISortableOptions } from '@core/sortable.interfaces';
 
-// Export animation utilities and types
-export { AnimationStateManager as animate } from '@animation/animation';
-export { type IAnimationState as AnimationOptions, type IAnimationState as AnimationPoint } from '@animation/animation.interfaces';
-export { animate as getTransform, animate as setTransform } from '@animation/animation.utils';
+// Animation exports
+export { AnimationStateManager } from '@animation/animation';
+export { type IAnimationManager, type IAnimationState } from '@animation/animation.interfaces';
+export { animate } from '@animation/animation.utils';
 
-// Export DOM utilities if needed externally
+// DOM utilities
 export { closest, getRect } from '@dom/dom.utils';
-export { off, on } from '@dom/event';

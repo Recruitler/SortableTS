@@ -14,6 +14,14 @@ The build process is managed using Vite. To build the package, run the following
 npm run build
 ```
 
+## Running the example app
+
+The example app is built and runs on Vite.
+
+```bash
+npm run example
+```
+
 ## Code
 
 - src/animation/: Contains animation-related functionality
@@ -34,6 +42,7 @@ SortableTS/
 │ │ ├── animation.ts
 │ │ └── animation.utils.ts
 │ ├── core/
+│ │ ├── state.ts
 │ │ ├── sortable.interfaces.ts
 │ │ ├── sortable.readme.md
 │ │ ├── sortable.ts
@@ -77,4 +86,4 @@ if (!instance) {
 
 Changed `static ghost` to `preview`
 Renamed `_createGhost` to `_createPreview`
-Removed ghost-related methods to \_hideDraggingEl, \_showDraggingEl, \_appendDraggingEl
+Changed ghost-related methods to `_hideDraggingEl`, `_showDraggingEl`, `_appendDraggingEl`
