@@ -70,15 +70,7 @@ npm run dev
 
 ## Code
 
-- src/animation/: Contains animation-related functionality
-- src/core/: Contains the main sortable implementation and its interfaces
-- src/dom/: Contains DOM-related utilities and event handling
-- src/utils/: Contains general utility functions for arrays and math operations
-- index.ts: The main entry point of the library
-
-The project also includes proper configuration files for TypeScript, ESLint, Prettier, and Vite for development and building.
-
-ASCII tree diagram of the project structure:
+The original concepts of Sortable.js have each been rearchitected in order to closely resemble the original features.
 
 ```
 SortableTS/
@@ -88,33 +80,47 @@ SortableTS/
 │ │ ├── animation.ts
 │ │ └── animation.utils.ts
 │ ├── core/
-│ │ ├── state.ts
 │ │ ├── sortable.interfaces.ts
 │ │ ├── sortable.readme.md
 │ │ ├── sortable.ts
-│ │ └── store.ts
+│ │ ├── state.readme.md
+│ │ └── state.ts                <-- new state management
 │ ├── dom/
 │ │ ├── dom.utils.ts
 │ │ ├── event.interfaces.ts
-│ │ ├── event.ts
-│ │ └── events.utils.ts
+│ │ └── event.ts
 │ ├── utils/
 │ │ ├── array.ts
 │ │ ├── browser.ts
-│ │ ├── element.utils.ts
-│ │ └── math.ts
+│ │ ├── element.ts
+│ │ ├── math.ts
+│ │ ├── scroll.ts
+│ │ ├── touch.ts
+│ │ └── utils.readme.md
+│ ├── cleanup.manager.ts        <-- new pub/sub/instance/listener/timer management
 │ ├── global.interfaces.ts
 │ └── index.ts
+|
 ├── example/
-├── .editorconfig
-├── .eslintignore
-├── .eslintrc.json
-├── .gitignore
-├── .prettierignore
-├── .prettierrc
+│ ├── src/
+│ │ ├── main.ts
+│ │ ├── output.css
+│ │ ├── style.css
+│ │ └── types.d.ts
+│ ├── index.html
+│ ├── package.json
+│ ├── package-lock.json
+│ ├── postcss.config.js
+│ ├── tailwind.config.js
+│ ├── tsconfig.json
+│ └── vite.config.ts
+|
+├── LICENSE
+├── README.md
+├── changelog.md
 ├── package.json
 ├── package-lock.json
-├── readme.md
+├── rollup.config.js
 ├── tsconfig.json
 └── vite.config.ts
 ```
@@ -145,6 +151,8 @@ The final output structure is:
 ```bash
 npm run build --production
 ```
+
+- no sourcemaps
 
 ## Differences from legacy SortableJS:
 
