@@ -1,0 +1,46 @@
+# Development files
+.git
+.github
+.gitignore
+.npmrc
+.eslintrc
+.prettierrc
+.vscode
+*.log
+*.tgz
+
+# Source files (since we're publishing the dist)
+src/**/*.test.ts
+src/**/*.spec.ts
+src/**/*.stories.ts
+src/**/*.md
+
+# Build tools
+vite.config.ts
+rollup.config.js
+tsconfig.json
+
+# Examples and docs
+example/
+docs/
+*.todo
+*.todo.md
+
+# CI/CD
+.github/
+.travis.yml
+.gitlab-ci.yml
+.circleci/
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Misc
+.DS_Store
+.env
+.env.*
+coverage/
+node_modules/

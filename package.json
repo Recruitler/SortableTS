@@ -1,19 +1,56 @@
 {
-  "name": "sortablets",
+  "name": "@recruitler/sortable",
   "version": "1.0.0",
   "description": "TypeScript rewrite of Sortable.js",
   "type": "module",
-  "main": "dist/index.cjs",
-  "module": "dist/index.mjs",
-  "browser": "dist/sortablets.js",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/types/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "sideEffects": false,
   "scripts": {
     "dev": "vite",
-    "build": "vite build && rollup -c",
+    "build:types": "tsc --emitDeclarationOnly",
+    "build:js": "rollup -c",
+    "build": "npm run build:types && npm run build:js",
+    "build:prod": "NODE_ENV=production vite build && rollup -c",
     "preview": "vite preview",
     "clean": "rimraf dist",
-    "example": "npm run build && vite example"
+    "example": "npm run build && vite example",
+    "prepublishOnly": "npm run clean && npm run build",
+    "test": "echo \"No tests specified\" && exit 0"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/sortablets.git"
+  },
+  "keywords": [
+    "sortable",
+    "drag-and-drop",
+    "typescript",
+    "dnd",
+    "reorder",
+    "drag",
+    "drop"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yourusername/sortablets/issues"
+  },
+  "homepage": "https://github.com/yourusername/sortablets#readme",
   "devDependencies": {
     "@rollup/plugin-typescript": "^12.1.2",
     "@types/node": "^22.13.1",
@@ -30,5 +67,8 @@
   },
   "engines": {
     "node": ">=22.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

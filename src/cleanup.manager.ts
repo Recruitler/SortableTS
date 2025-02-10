@@ -80,7 +80,7 @@ export class CleanupManager {
   }
 
   public cleanupAll(): void {
-    this.tasks.forEach((tasks: Set<ICleanupTask>, instanceId: symbol) => {
+    this.tasks.forEach((_tasks: Set<ICleanupTask>, instanceId: symbol) => {
       this.cleanup(instanceId);
     });
     this.tasks.clear();

@@ -5,24 +5,23 @@ export default {
   input: 'src/index.ts',
   output: [
     {
-      file: 'dist/sortablets.min.js',
-      format: 'umd',
-      name: 'SortableTS',
-      sourcemap: true,
-      plugins: [terser()]
+      file: 'dist/index.js',
+      format: 'es',
+      sourcemap: true
     },
     {
-      file: 'dist/sortablets.js',
-      format: 'umd',
-      name: 'SortableTS',
-      sourcemap: true
+      file: 'dist/index.min.js',
+      format: 'es',
+      sourcemap: true,
+      plugins: [terser()]
     }
   ],
   plugins: [
     typescript({
       tsconfig: './tsconfig.json',
-      declaration: true,
-      declarationDir: './dist/types'
+      sourceMap: true,
+      inlineSources: true,
+      exclude: ['**/__tests__/**']
     })
   ]
 };

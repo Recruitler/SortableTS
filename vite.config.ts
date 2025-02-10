@@ -1,16 +1,22 @@
 import { defineConfig } from 'vite'
 import dts from 'vite-plugin-dts'
+import typescript from '@rollup/plugin-typescript'
 import { resolve } from 'path'
 
 export default defineConfig({
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
-      formats: ['es', 'cjs'],
-      fileName: (format) => `index.${format === 'es' ? 'mjs' : 'cjs'}`
+      formats: ['es'],
+      fileName: 'index'
     },
     rollupOptions: {
-      external: ['@types/node']
+      external: ['@types/node'],
+      plugins: [
+        typescript({
+          noEmit: process.env.NODE_ENV === 'production'
+        })
+      ]
     }
   },
   resolve: {
