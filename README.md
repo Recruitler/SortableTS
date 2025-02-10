@@ -1,46 +1,38 @@
 # SortableTS
 
-A modern (ESM) TypeScript library for drag-and-drop, sortable lists. This is a complete TypeScript rewrite of the popular Sortable.js library, offering better type safety and modern JavaScript features.
+A modern (ESM-only) TypeScript library for drag-and-drop sorting.
+This is a complete TypeScript rewrite of the popular Sortable.js library, offering better type safety and only supportingmodern JavaScript features.
 
-## Installation
+## Installation (NPM coming soon)
 
 ```bash
-npm install sortablets
+npm install @recruitler/sortable
 # or
-yarn add sortablets
+yarn add @recruitler/sortable
 # or
-pnpm add sortablets
+pnpm add @recruitler/sortable
 ```
 
 ## Usage
 
+Direct ESM imports in browsers:
+
+```javascript
+<script type="module">import {Sortable} from './dist/index.js';</script>
+```
+
+Or in other ESM projects:
+
+TypeScript
+
 ```typescript
-import { Sortable } from 'sortablets';
-
-// Simple sortable list
-new Sortable(document.getElementById('list'), {
-  animation: 150,
-  ghostClass: 'blue-background-class',
-});
-
-// Shared lists
-new Sortable(document.getElementById('list1'), {
-  animation: 150,
-  group: 'shared', // set both lists to same group
-});
-
-new Sortable(document.getElementById('list2'), {
-  animation: 150,
-  group: 'shared',
-});
-
-// More examples in the /example directory
+import { Sortable } from '@recruitler/sortable';
 ```
 
 ## Features
 
 - Full TypeScript support with accurate type definitions
-- Modern ES Module and CommonJS builds
+- Modern ES Module only
 - Tree-shakeable
 - Zero dependencies
 - Supports all modern drag and drop features:
@@ -72,7 +64,8 @@ npm run build
 The example app is built and runs on Vite.
 
 ```bash
-npm run example
+cd example
+npm run dev
 ```
 
 ## Code
@@ -139,12 +132,6 @@ npm run dev
 - The build produces both regular and minified ESM versions
 - Source maps are included for debugging
 - All TypeScript type declarations are generated correctly
-- The final output structure is:
-
-  dist/index.js - Main ESM module
-  dist/index.min.js - Minified ESM module
-  dist/types/\*.d.ts - TypeScript type declarations
-  Source maps for both JS files
 
 The final output structure is:
 
@@ -152,20 +139,6 @@ The final output structure is:
 - dist/index.min.js - Minified ESM module
 - dist/types/\*.d.ts - TypeScript type declarations
 - Source maps for both JS files
-
-Direct ESM imports in browsers:
-
-<script type="module">
-  import { Sortable } from './dist/index.js';
-</script>
-
-Or in other ESM projects:
-
-javascript
-
-```typescript
-import { Sortable } from '@recruitler/sortable';
-```
 
 ### The production build process
 
