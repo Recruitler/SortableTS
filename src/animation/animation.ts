@@ -141,7 +141,7 @@ export class AnimationStateManager implements IAnimationManager {
    * Calculates the appropriate animation duration for a state transition.
    * If there's an ongoing animation, it may calculate real-time duration based on previous positions.
    * Otherwise, it uses the default animation duration from options.
-   * 
+   *
    * @param state - The animation state containing target and position information
    * @returns The calculated animation duration in milliseconds
    */
@@ -151,16 +151,8 @@ export class AnimationStateManager implements IAnimationManager {
     let duration: number = 0;
 
     // If there's an ongoing animation, check if we need to calculate real-time duration
-    if (target.thisAnimationDuration && 
-        target.prevFromRect && 
-        target.prevToRect && 
-        isRectEqual(target.prevFromRect, currentRect)) {
-      duration = calculateRealTime(
-        state.rect, 
-        target.prevFromRect, 
-        target.prevToRect, 
-        this.sortable.options
-      );
+    if (target.thisAnimationDuration && target.prevFromRect && target.prevToRect && isRectEqual(target.prevFromRect, currentRect)) {
+      duration = calculateRealTime(state.rect, target.prevFromRect, target.prevToRect, this.sortable.options);
     }
 
     // If the position has changed from the initial position
