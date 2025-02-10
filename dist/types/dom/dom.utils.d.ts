@@ -1,0 +1,13 @@
+import { IMatrix } from '@core/sortable.interfaces';
+export declare const addEvent: (el: HTMLElement, event: string, fn: (evt: Event) => void) => void;
+export declare const removeEvent: (el: HTMLElement, event: string, fn: (evt: Event) => void) => void;
+export declare const matches: (el: HTMLElement | null, selector: string) => boolean;
+export declare const getParentOrHost: (el: Node) => Node;
+export declare const closest: (el: HTMLElement | null, selector: string, ctx?: Node, includeCTX?: boolean) => HTMLElement | null;
+export declare const toggleClass: (el: HTMLElement, name: string, state: boolean) => void;
+export type CSSProperties = Partial<CSSStyleDeclaration>;
+export declare const css: (el: HTMLElement, prop: string | CSSProperties, val?: string | number) => string | void;
+export declare const matrix: (el: HTMLElement | string, selfOnly?: boolean) => IMatrix | null;
+export declare const getRect: (el: HTMLElement | Window, relativeToContainingBlock?: boolean, relativeToNonStaticParent?: boolean, undoScale?: boolean, container?: HTMLElement) => DOMRect;
+export declare const getScrollingElement: () => HTMLElement;
+export declare const clone: <T extends Node>(el: T) => T;
